@@ -1,0 +1,6 @@
+interface:
+  display_name: "Integracao"
+  short_description: "Cria integracoes no padrao do backend"
+  default_prompt: "Use $integracao para criar ou refatorar integracoes no backend."
+policy:
+  allow_implicit_invocation: true

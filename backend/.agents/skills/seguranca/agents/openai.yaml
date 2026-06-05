@@ -1,0 +1,6 @@
+interface:
+  display_name: "Seguranca Backend"
+  short_description: "Revisa riscos e hardening no backend"
+  default_prompt: "Use $seguranca para revisar ou reforcar seguranca no backend."
+policy:
+  allow_implicit_invocation: true

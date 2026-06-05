@@ -1,0 +1,5 @@
+﻿interface:
+  display_name: Skill Local (Descontinuada)
+  short_description: Use a skill equivalente da raiz.
+  icon: alert-circle
+  color: zinc

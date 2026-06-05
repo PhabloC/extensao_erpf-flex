@@ -1,0 +1,6 @@
+interface:
+  display_name: "Evento"
+  short_description: "Cria eventos no padrao do backend"
+  default_prompt: "Use $evento para criar ou refatorar eventos no backend."
+policy:
+  allow_implicit_invocation: true

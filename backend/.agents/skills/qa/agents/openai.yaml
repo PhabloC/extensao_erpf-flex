@@ -1,0 +1,6 @@
+interface:
+  display_name: "QA Backend"
+  short_description: "Executa lint, Jest, e2e e build do backend"
+  default_prompt: "Use $qa para validar mudancas no backend com lint, Jest, e2e e build."
+policy:
+  allow_implicit_invocation: true

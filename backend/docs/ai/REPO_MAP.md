@@ -1,0 +1,38 @@
+# Repo Map
+
+```text
+backend/
+  docs/ai/
+    AGENTS.md
+    ARCHITECTURE.md
+    BACKEND_PATTERNS.md
+    CLEAN_CODE.md
+    CODE_STYLE.md
+    DEVELOPMENT_WORKFLOW.md
+    EXAMPLES.md
+    QA.md
+    REPO_MAP.md
+    SECURITY.md
+  src/
+    common/
+      decorators/
+      filters/
+      guards/
+      interceptors/
+      pipes/
+      utils/
+    config/
+    database/
+      migrations/
+      seeds/
+    modules/
+      auth/
+      users/
+    patterns/
+      adapters/
+      factory/
+      strategy/
+  AGENTS.md
+  package.json
+  tsconfig.json
+```

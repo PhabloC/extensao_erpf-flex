@@ -1,0 +1,144 @@
+:root {
+  color-scheme: light;
+  font-family: "Segoe UI", Tahoma, sans-serif;
+  line-height: 1.4;
+  font-weight: 400;
+  background: #f3f6fb;
+  color: #162033;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 360px;
+  background:
+    radial-gradient(circle at top right, #dce7ff, transparent 42%),
+    linear-gradient(180deg, #f8fbff 0%, #eef3fa 100%);
+}
+
+.popup {
+  padding: 18px;
+}
+
+.popup__header {
+  margin-bottom: 16px;
+}
+
+.popup__eyebrow {
+  margin: 0 0 6px;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #4d5d7a;
+}
+
+.popup__header h1 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.popup__copy {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: #41516d;
+}
+
+.popup__form,
+.status-card,
+.session-card {
+  display: grid;
+  gap: 12px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field label,
+.status-card h2,
+.session-card h2 {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.field input {
+  width: 100%;
+  border: 1px solid #b9c5d8;
+  border-radius: 10px;
+  padding: 11px 12px;
+  background: rgba(255, 255, 255, 0.96);
+  color: #162033;
+}
+
+.field input:focus,
+button:focus {
+  outline: 2px solid #1658d0;
+  outline-offset: 2px;
+}
+
+.field small {
+  font-size: 11px;
+  color: #55647f;
+}
+
+.session-card,
+.status-card {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid #cfdaea;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.session-card__summary,
+.status-card__message {
+  margin: 0;
+  font-size: 13px;
+  color: #25324a;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+button {
+  border: none;
+  border-radius: 10px;
+  padding: 11px 14px;
+  background: #1646a3;
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #123b8c;
+}
+
+.button-secondary {
+  background: #dde6f4;
+  color: #173052;
+}
+
+.button-secondary:hover {
+  background: #d2dded;
+}
+
+.status-card__details {
+  margin: 0;
+  padding: 10px;
+  border-radius: 10px;
+  background: #0f1726;
+  color: #d7e4ff;
+  overflow: auto;
+  font-size: 11px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

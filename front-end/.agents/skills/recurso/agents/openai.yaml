@@ -1,0 +1,6 @@
+interface:
+  display_name: "Recurso Frontend"
+  short_description: "Cria recursos React no padrao do repo"
+  default_prompt: "Use $recurso para implementar ou refatorar um recurso no frontend."
+policy:
+  allow_implicit_invocation: true

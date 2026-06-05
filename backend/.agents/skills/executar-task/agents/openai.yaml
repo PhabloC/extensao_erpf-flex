@@ -1,0 +1,5 @@
+﻿interface:
+  display_name: Executar Task (Backend)
+  short_description: Executa o escopo local de tasks definidas no backlog da raiz.
+  icon: wrench
+  color: cyan

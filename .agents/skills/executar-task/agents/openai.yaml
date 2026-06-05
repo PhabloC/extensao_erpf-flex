@@ -1,0 +1,5 @@
+﻿interface:
+  display_name: Executar Task (Raiz)
+  short_description: Executa task da raiz roteando React/Vite, Next.js, backend e mobile opcional.
+  icon: play-circle
+  color: emerald

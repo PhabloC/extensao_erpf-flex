@@ -1,0 +1,6 @@
+interface:
+  display_name: "Modulo Backend"
+  short_description: "Cria modulos NestJS no padrao do repo"
+  default_prompt: "Use $modulo para implementar ou refatorar um modulo no backend."
+policy:
+  allow_implicit_invocation: true

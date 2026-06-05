@@ -1,0 +1,5 @@
+﻿interface:
+  display_name: Planejar Tasks (Raiz)
+  short_description: Gera backlog unico perguntando stack web e se havera mobile.
+  icon: list-checks
+  color: indigo

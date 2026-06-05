@@ -1,0 +1,6 @@
+interface:
+  display_name: "Modal"
+  short_description: "Cria modais no padrao do frontend"
+  default_prompt: "Use $modal para criar ou refatorar um modal no frontend."
+policy:
+  allow_implicit_invocation: true

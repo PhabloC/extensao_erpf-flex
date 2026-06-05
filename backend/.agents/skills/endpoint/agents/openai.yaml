@@ -1,0 +1,6 @@
+interface:
+  display_name: "Endpoint"
+  short_description: "Cria endpoints no padrao do backend"
+  default_prompt: "Use $endpoint para criar ou refatorar um endpoint no backend."
+policy:
+  allow_implicit_invocation: true

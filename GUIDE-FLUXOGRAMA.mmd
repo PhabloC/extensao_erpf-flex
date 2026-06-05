@@ -1,0 +1,38 @@
+flowchart TD
+    A[Inicio] --> B[Planejamento global<br/>skill planejar-tasks]
+    B --> C[Ler contexto global<br/>AGENTS.md, GUIDE.md, requirements/, design-system/, contracts/]
+    C --> D[Delegar propostas para front-end e backend]
+    D --> E[Consolidar backlog unico em tasks/]
+    E --> F[Classificar tasks<br/>front, back, shared]
+    F --> G[Registrar dependencias cruzadas]
+    G --> H[Revisao humana<br/>tasks/000-index.md e tasks]
+
+    H --> I{Task aprovada?}
+    I -- nao --> J[Replanejar backlog]
+    J --> H
+    I -- sim --> K[Execucao de task<br/>skill executar-task]
+
+    K --> L{Modo de execucao}
+    L -- single-stack --> M[Delegar para uma stack]
+    L -- cross-stack/shared --> N[Delegar para stacks em paralelo]
+    M --> O[Implementacao]
+    N --> O
+
+    O --> P{Integracao cliente-servidor?}
+    P -- sim --> Q[Usar contracts/openapi.yaml<br/>como prerequisito]
+    P -- nao --> R[Seguir implementacao]
+    Q --> S[Atualizar task da raiz<br/>e tasks/000-index.md]
+    R --> S
+
+    S --> T{Finalizada?}
+    T -- sim --> U[Status: done]
+    T -- nao --> V{Bloqueada?}
+    V -- sim --> W[Status: blocked]
+    V -- nao --> X{Mudanca de escopo?}
+    X -- sim --> Y[Gerar tasks adicionais<br/>skill gerar-tasks-adicionais]
+    Y --> Z[Criar tasks em tasks/change-requests/<br/>com tipo e dependencias]
+    Z --> H
+    X -- nao --> O
+
+    U --> AA[Fim]
+    W --> AA

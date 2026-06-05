@@ -1,0 +1,6 @@
+interface:
+  display_name: "Tabela"
+  short_description: "Cria tabelas e listagens no frontend"
+  default_prompt: "Use $tabela para criar ou refatorar uma tabela no frontend."
+policy:
+  allow_implicit_invocation: true

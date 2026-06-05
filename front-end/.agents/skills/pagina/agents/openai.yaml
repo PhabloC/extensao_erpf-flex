@@ -1,0 +1,6 @@
+interface:
+  display_name: "Pagina"
+  short_description: "Cria pages e rotas no padrao do frontend"
+  default_prompt: "Use $pagina para criar ou refatorar uma page no frontend."
+policy:
+  allow_implicit_invocation: true

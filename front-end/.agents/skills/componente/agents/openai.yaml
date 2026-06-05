@@ -1,0 +1,6 @@
+interface:
+  display_name: "Componente"
+  short_description: "Cria componentes reutilizaveis no frontend"
+  default_prompt: "Use $componente para criar ou refatorar um componente no frontend."
+policy:
+  allow_implicit_invocation: true

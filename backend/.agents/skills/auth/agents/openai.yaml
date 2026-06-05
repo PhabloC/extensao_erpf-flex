@@ -1,0 +1,6 @@
+interface:
+  display_name: "Auth"
+  short_description: "Cria fluxos de auth no backend"
+  default_prompt: "Use $auth para criar ou refatorar autenticacao no backend."
+policy:
+  allow_implicit_invocation: true

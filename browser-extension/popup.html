@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ERP Flex para Kanban</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="popup">
+      <header class="popup__header">
+        <p class="popup__eyebrow">ERP Flex para Kanban</p>
+        <h1>Importar ordem do ERP</h1>
+        <p class="popup__copy">
+          Abra a ordem no ERP Flex, informe a API do sistema e execute a importacao.
+        </p>
+      </header>
+
+      <form id="import-form" class="popup__form">
+        <div class="field">
+          <label for="api-base-url">URL base da API</label>
+          <input
+            id="api-base-url"
+            name="apiBaseUrl"
+            type="url"
+            placeholder="http://localhost:3000/api"
+            autocomplete="url"
+            required
+          />
+          <small>Se informar sem `/api`, a extensao completa automaticamente.</small>
+        </div>
+
+        <div class="field">
+          <label for="user-email">E-mail do sistema</label>
+          <input
+            id="user-email"
+            name="userEmail"
+            type="email"
+            placeholder="usuario@empresa.com"
+            autocomplete="username"
+          />
+        </div>
+
+        <div class="field">
+          <label for="user-password">Senha do sistema</label>
+          <input
+            id="user-password"
+            name="userPassword"
+            type="password"
+            placeholder="Digite apenas para renovar a sessao"
+            autocomplete="current-password"
+          />
+          <small>A senha e usada para login e nunca fica salva na extensao.</small>
+        </div>
+
+        <section class="session-card" aria-labelledby="session-title">
+          <h2 id="session-title">Sessao</h2>
+          <p id="session-summary" class="session-card__summary">
+            Nenhuma sessao autenticada salva.
+          </p>
+        </section>
+
+        <div class="actions">
+          <button id="import-button" type="submit">Importar ordem atual</button>
+          <button id="clear-session-button" type="button" class="button-secondary">
+            Limpar sessao
+          </button>
+        </div>
+      </form>
+
+      <section class="status-card" aria-labelledby="status-title">
+        <h2 id="status-title">Status</h2>
+        <p id="status-message" class="status-card__message" role="status" aria-live="polite">
+          Aguardando acao.
+        </p>
+        <pre id="status-details" class="status-card__details" hidden></pre>
+      </section>
+    </main>
+
+    <script src="src/popup.js"></script>
+  </body>
+</html>

@@ -1,0 +1,5 @@
+﻿interface:
+  display_name: Gerar Tasks Adicionais (Raiz)
+  short_description: Gera change requests respeitando stack web e mobile opcional.
+  icon: git-pull-request
+  color: amber

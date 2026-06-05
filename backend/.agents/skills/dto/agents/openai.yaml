@@ -1,0 +1,6 @@
+interface:
+  display_name: "DTO"
+  short_description: "Cria DTOs no padrao do backend"
+  default_prompt: "Use $dto para criar ou refatorar DTOs no backend."
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Entidade"
+  short_description: "Cria entities no padrao do backend"
+  default_prompt: "Use $entidade para criar ou refatorar uma entity no backend."
+policy:
+  allow_implicit_invocation: true

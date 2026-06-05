@@ -1,0 +1,26 @@
+{
+  "version": "1.0.0",
+  "name": "orchestrated-scaffold",
+  "managedPaths": [
+    ".agents/skills/**",
+    "AGENTS.md",
+    "GUIDE.md",
+    "GUIDE-FLUXOGRAMA.mmd",
+    ".github/workflows/**",
+    "README.md",
+    ".scaffold-version"
+  ],
+  "ignoreDuringUpgrade": [
+    "tasks/**",
+    "front-end/**",
+    "backend/**",
+    "requirements/**",
+    "design-system/front/**",
+    "contracts/openapi.yaml",
+    "**/*.example",
+    ".git/**"
+  ],
+  "postUpgradeCommands": [
+    "npm install --silent"
+  ]
+}

@@ -1,0 +1,86 @@
+.sidebar {
+  position: sticky;
+  top: 0;
+  display: grid;
+  align-content: start;
+  gap: 2rem;
+  min-height: 100vh;
+  padding: 2rem 1.25rem;
+  border-right: 1px solid var(--color-border);
+  background: rgba(5, 10, 20, 0.72);
+  backdrop-filter: blur(18px);
+}
+
+.brandBlock {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  background:
+    linear-gradient(160deg, rgba(111, 233, 196, 0.12), transparent 45%),
+    rgba(255, 255, 255, 0.04);
+}
+
+.brandTag {
+  color: var(--color-accent);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.brandTitle {
+  margin: 0.55rem 0 0;
+  font-size: 2rem;
+}
+
+.brandText {
+  margin: 0.75rem 0 0;
+  color: var(--color-text-muted);
+}
+
+.navigation {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.link {
+  display: grid;
+  gap: 0.25rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 0.95rem 1rem;
+  color: var(--color-text-muted);
+  background: rgba(255, 255, 255, 0.02);
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.link:hover {
+  border-color: rgba(111, 233, 196, 0.25);
+  transform: translateX(2px);
+}
+
+.activeLink {
+  border-color: rgba(111, 233, 196, 0.38);
+  background: rgba(111, 233, 196, 0.08);
+  color: var(--color-text);
+}
+
+.linkLabel {
+  font-weight: 700;
+}
+
+.linkDescription {
+  font-size: 0.9rem;
+}
+
+@media (max-width: 960px) {
+  .sidebar {
+    position: static;
+    min-height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+  }
+}

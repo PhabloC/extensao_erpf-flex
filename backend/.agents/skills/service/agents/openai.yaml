@@ -1,0 +1,6 @@
+interface:
+  display_name: "Service"
+  short_description: "Cria services no padrao do backend"
+  default_prompt: "Use $service para criar ou refatorar um service no backend."
+policy:
+  allow_implicit_invocation: true

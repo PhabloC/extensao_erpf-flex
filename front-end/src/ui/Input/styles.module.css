@@ -1,0 +1,47 @@
+.field {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.label {
+  color: var(--color-text);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.input {
+  min-height: 3rem;
+  border: 1px solid rgba(164, 184, 214, 0.18);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 0.95rem;
+  color: var(--color-text);
+  background: rgba(255, 255, 255, 0.04);
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease;
+}
+
+.input:focus {
+  outline: none;
+  border-color: rgba(111, 233, 196, 0.6);
+  box-shadow: 0 0 0 4px rgba(111, 233, 196, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.error {
+  border-color: rgba(255, 125, 115, 0.55);
+}
+
+.messageHint,
+.messageError {
+  font-size: 0.85rem;
+}
+
+.messageHint {
+  color: var(--color-text-muted);
+}
+
+.messageError {
+  color: var(--color-danger);
+}

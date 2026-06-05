@@ -1,0 +1,650 @@
+openapi: 3.1.0
+info:
+  title: ERP Flex para Kanban API Contract
+  version: 0.2.0
+  description: Contrato central para alinhamento entre front-end, backend e extensao de navegador.
+  license:
+    name: Proprietary
+    identifier: LicenseRef-Proprietary
+servers:
+  - url: https://api.seu-dominio.com
+tags:
+  - name: ProductionOrders
+    description: Operacoes principais de cadastro, consulta e movimentacao de Ordens de Producao.
+  - name: ProductionOrderImports
+    description: Operacoes de importacao de Ordens de Producao a partir do ERP Flex.
+  - name: AppVersion
+    description: Endpoint legado de compatibilidade de versao do app mobile.
+security:
+  - bearerAuth: []
+paths:
+  /production-orders:
+    get:
+      summary: List production orders
+      description: Returns production orders for list and kanban views.
+      operationId: listProductionOrders
+      tags:
+        - ProductionOrders
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/ProductionOrderStatus'
+        - name: origin
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/ProductionOrderOrigin'
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 120
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Paginated production order list.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductionOrderListResponse'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      summary: Create production order manually
+      description: Creates a production order manually in the system.
+      operationId: createProductionOrder
+      tags:
+        - ProductionOrders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductionOrderRequest'
+      responses:
+        '201':
+          description: Production order created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductionOrderDetail'
+        '400':
+          description: Validation error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /production-orders/{orderId}:
+    get:
+      summary: Get production order details
+      description: Returns a production order with traceability and history metadata.
+      operationId: getProductionOrderById
+      tags:
+        - ProductionOrders
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Production order details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductionOrderDetail'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Production order not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /production-orders/{orderId}/status:
+    patch:
+      summary: Update production order status
+      description: Moves a production order to another kanban status and records the transition.
+      operationId: updateProductionOrderStatus
+      tags:
+        - ProductionOrders
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProductionOrderStatusRequest'
+      responses:
+        '200':
+          description: Production order status updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductionOrderDetail'
+        '400':
+          description: Invalid transition or validation error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Production order not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /production-orders/imports/erp-flex:
+    post:
+      summary: Import production order from ERP Flex
+      description: Creates a production order from ERP Flex data collected by the browser extension.
+      operationId: importProductionOrderFromErpFlex
+      tags:
+        - ProductionOrderImports
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImportProductionOrderFromErpFlexRequest'
+      responses:
+        '201':
+          description: Production order imported successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportProductionOrderSuccessResponse'
+        '400':
+          description: Validation error in imported payload.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: ERP production order already imported.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportProductionOrderConflictResponse'
+  /app/versions/check:
+    get:
+      summary: Check mobile app version compatibility
+      description: Legacy endpoint kept temporarily; candidate for future removal from the active product scope.
+      operationId: checkAppVersion
+      tags:
+        - AppVersion
+      security: []
+      parameters:
+        - name: x-app-tracking-version
+          in: header
+          required: false
+          schema:
+            type: string
+            example: 3.1.2-20260601
+          description: Internal tracking version `{semver}-{YYYYMMDD}` sent by the client.
+        - name: x-app-platform
+          in: header
+          required: false
+          schema:
+            type: string
+            enum:
+              - ios
+              - android
+              - web
+          description: Platform reported by the client.
+      responses:
+        '200':
+          description: Version compatibility policy for the current mobile app.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppVersionCheckResponse'
+        '400':
+          description: Invalid request headers.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ProductionOrderStatus:
+      type: string
+      enum:
+        - backlog
+        - ready
+        - in_progress
+        - paused
+        - done
+        - canceled
+      example: backlog
+    ProductionOrderOrigin:
+      type: string
+      enum:
+        - manual
+        - erp-flex
+      example: manual
+    ProductionOrderItem:
+      type: object
+      required:
+        - productCode
+        - productDescription
+        - quantity
+      properties:
+        productCode:
+          type: string
+          minLength: 1
+          maxLength: 60
+          example: PRD-001
+        productDescription:
+          type: string
+          minLength: 1
+          maxLength: 240
+          example: Bobina de Aco Galvanizado
+        quantity:
+          type: number
+          exclusiveMinimum: 0
+          example: 120
+        unit:
+          type:
+            - string
+            - 'null'
+          maxLength: 20
+          example: kg
+    ProductionOrderSourceMetadata:
+      type: object
+      required:
+        - origin
+      properties:
+        origin:
+          $ref: '#/components/schemas/ProductionOrderOrigin'
+        externalOrderId:
+          type:
+            - string
+            - 'null'
+          maxLength: 120
+          example: OP-ERP-20458
+        sourcePageUrl:
+          type:
+            - string
+            - 'null'
+          format: uri
+          example: https://erp-flex.example.com/ordens/20458
+        importedAt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        importedByUserId:
+          type:
+            - string
+            - 'null'
+          format: uuid
+    ProductionOrderHistoryEventType:
+      type: string
+      enum:
+        - created
+        - imported
+        - status_changed
+        - updated
+      example: created
+    ProductionOrderHistoryEvent:
+      type: object
+      required:
+        - id
+        - eventType
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        eventType:
+          $ref: '#/components/schemas/ProductionOrderHistoryEventType'
+        fromStatus:
+          oneOf:
+            - $ref: '#/components/schemas/ProductionOrderStatus'
+            - type: 'null'
+        toStatus:
+          oneOf:
+            - $ref: '#/components/schemas/ProductionOrderStatus'
+            - type: 'null'
+        notes:
+          type:
+            - string
+            - 'null'
+          maxLength: 500
+        createdAt:
+          type: string
+          format: date-time
+        createdByUserId:
+          type:
+            - string
+            - 'null'
+          format: uuid
+    ProductionOrderSummary:
+      type: object
+      required:
+        - id
+        - orderNumber
+        - item
+        - status
+        - source
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        orderNumber:
+          type: string
+          minLength: 1
+          maxLength: 120
+          example: OP-2026-001
+        item:
+          $ref: '#/components/schemas/ProductionOrderItem'
+        dueDate:
+          type:
+            - string
+            - 'null'
+          format: date
+        issueDate:
+          type:
+            - string
+            - 'null'
+          format: date
+        notes:
+          type:
+            - string
+            - 'null'
+          maxLength: 2000
+        status:
+          $ref: '#/components/schemas/ProductionOrderStatus'
+        source:
+          $ref: '#/components/schemas/ProductionOrderSourceMetadata'
+        createdAt:
+          type: string
+          format: date-time
+        createdByUserId:
+          type:
+            - string
+            - 'null'
+          format: uuid
+    ProductionOrderDetail:
+      allOf:
+        - $ref: '#/components/schemas/ProductionOrderSummary'
+        - type: object
+          required:
+            - history
+          properties:
+            history:
+              type: array
+              items:
+                $ref: '#/components/schemas/ProductionOrderHistoryEvent'
+    PaginationMetadata:
+      type: object
+      required:
+        - page
+        - pageSize
+        - totalItems
+        - totalPages
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          example: 1
+        pageSize:
+          type: integer
+          minimum: 1
+          example: 20
+        totalItems:
+          type: integer
+          minimum: 0
+          example: 42
+        totalPages:
+          type: integer
+          minimum: 0
+          example: 3
+    ProductionOrderListResponse:
+      type: object
+      required:
+        - items
+        - pagination
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductionOrderSummary'
+        pagination:
+          $ref: '#/components/schemas/PaginationMetadata'
+    CreateProductionOrderRequest:
+      type: object
+      required:
+        - orderNumber
+        - item
+      properties:
+        orderNumber:
+          type: string
+          minLength: 1
+          maxLength: 120
+          example: OP-2026-001
+        item:
+          $ref: '#/components/schemas/ProductionOrderItem'
+        issueDate:
+          type:
+            - string
+            - 'null'
+          format: date
+        dueDate:
+          type:
+            - string
+            - 'null'
+          format: date
+        notes:
+          type:
+            - string
+            - 'null'
+          maxLength: 2000
+        status:
+          oneOf:
+            - $ref: '#/components/schemas/ProductionOrderStatus'
+            - type: 'null'
+          description: Optional explicit initial status. Backend may apply the default initial column when omitted.
+    UpdateProductionOrderStatusRequest:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          $ref: '#/components/schemas/ProductionOrderStatus'
+        notes:
+          type:
+            - string
+            - 'null'
+          maxLength: 500
+    ImportProductionOrderFromErpFlexRequest:
+      type: object
+      required:
+        - externalOrderId
+        - orderNumber
+        - item
+      properties:
+        externalOrderId:
+          type: string
+          minLength: 1
+          maxLength: 120
+          example: ERP-OP-20458
+        orderNumber:
+          type: string
+          minLength: 1
+          maxLength: 120
+          example: OP-ERP-20458
+        item:
+          $ref: '#/components/schemas/ProductionOrderItem'
+        issueDate:
+          type:
+            - string
+            - 'null'
+          format: date
+        dueDate:
+          type:
+            - string
+            - 'null'
+          format: date
+        notes:
+          type:
+            - string
+            - 'null'
+          maxLength: 2000
+        sourcePageUrl:
+          type:
+            - string
+            - 'null'
+          format: uri
+        rawPayload:
+          type:
+            - object
+            - 'null'
+          additionalProperties: true
+          description: Optional raw payload kept for traceability and troubleshooting.
+    ImportProductionOrderSuccessResponse:
+      type: object
+      required:
+        - result
+        - productionOrder
+      properties:
+        result:
+          type: string
+          const: created
+        productionOrder:
+          $ref: '#/components/schemas/ProductionOrderDetail'
+    ImportProductionOrderConflictResponse:
+      type: object
+      required:
+        - result
+        - message
+        - existingProductionOrderId
+        - externalOrderId
+      properties:
+        result:
+          type: string
+          const: duplicate
+        message:
+          type: string
+          example: Production order already imported from ERP Flex.
+        existingProductionOrderId:
+          type: string
+          format: uuid
+        externalOrderId:
+          type: string
+          example: ERP-OP-20458
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          example: VALIDATION_ERROR
+        message:
+          type: string
+          example: Request payload is invalid.
+        details:
+          type:
+            - array
+            - 'null'
+          items:
+            type: object
+            additionalProperties: true
+    AppVersionCheckResponse:
+      type: object
+      required:
+        - appTrackingVersion
+        - currentVersion
+        - minimumSupportedVersion
+        - platform
+        - storeUrl
+        - updateRequired
+      properties:
+        appTrackingVersion:
+          type: string
+          example: 3.1.2-20260601
+        currentVersion:
+          type: string
+          example: 3.2.0-20260615
+        minimumSupportedVersion:
+          type: string
+          example: 3.1.0-20260601
+        platform:
+          type:
+            - string
+            - 'null'
+          enum:
+            - ios
+            - android
+            - web
+            - null
+          example: ios
+        storeUrl:
+          type:
+            - string
+            - 'null'
+          example: https://apps.apple.com/app/id0000000000
+        updateRequired:
+          type: boolean
+          example: false

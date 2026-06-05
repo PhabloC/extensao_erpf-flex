@@ -1,0 +1,6 @@
+interface:
+  display_name: "Repository"
+  short_description: "Cria repositories no padrao do backend"
+  default_prompt: "Use $repository para criar ou refatorar um repository no backend."
+policy:
+  allow_implicit_invocation: true

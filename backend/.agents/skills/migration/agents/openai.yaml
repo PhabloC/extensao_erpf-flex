@@ -1,0 +1,6 @@
+interface:
+  display_name: "Migration"
+  short_description: "Cria migrations no padrao do backend"
+  default_prompt: "Use $migration para criar ou revisar migrations no backend."
+policy:
+  allow_implicit_invocation: true

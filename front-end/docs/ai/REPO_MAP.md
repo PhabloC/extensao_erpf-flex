@@ -1,0 +1,42 @@
+# Repo Map
+
+```text
+frontend/
+  docs/ai/
+    AGENTS.md
+    ARCHITECTURE.md
+    CLEAN_CODE.md
+    CODE_STYLE.md
+    COMPONENT_REUSE.md
+    DEVELOPMENT_WORKFLOW.md
+    EXAMPLES.md
+    FRONTEND_PATTERNS.md
+    QA.md
+    REPO_MAP.md
+    SECURITY.md
+  src/
+    assets/
+    components/
+    constants/
+    hooks/
+    layout/
+    pages/
+    patterns/
+    routes/
+    services/
+      adapters/
+      dashboard/
+      http/
+    stores/
+    styles/
+    test/
+    types/
+    ui/
+    utils/
+      decorators/
+  AGENTS.md
+  eslint.config.js
+  package.json
+  tsconfig.json
+  vite.config.ts
+```

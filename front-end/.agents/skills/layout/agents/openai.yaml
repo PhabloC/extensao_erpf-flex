@@ -1,0 +1,6 @@
+interface:
+  display_name: "Layout"
+  short_description: "Cria layouts e shells no padrao do frontend"
+  default_prompt: "Use $layout para criar ou refatorar um layout no frontend."
+policy:
+  allow_implicit_invocation: true

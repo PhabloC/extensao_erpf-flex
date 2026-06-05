@@ -1,0 +1,6 @@
+interface:
+  display_name: "Formulario"
+  short_description: "Cria formularios com React Hook Form e Zod"
+  default_prompt: "Use $formulario para criar ou refatorar um formulario no frontend."
+policy:
+  allow_implicit_invocation: true
