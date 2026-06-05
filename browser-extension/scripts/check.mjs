@@ -8,10 +8,12 @@ const manifestPath = path.join(extensionRoot, 'manifest.json');
 const requiredFiles = [
   'manifest.json',
   'popup.html',
+  'advanced-settings.html',
   'popup.css',
   'src/background.js',
   'src/content-script.js',
   'src/popup.js',
+  'src/advanced-settings.js',
 ];
 
 for (const relativePath of requiredFiles) {

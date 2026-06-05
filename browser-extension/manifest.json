@@ -3,16 +3,28 @@
   "name": "ERP Flex para Kanban Importer",
   "version": "0.1.0",
   "description": "Importa ordens de producao do ERP Flex para o kanban do sistema.",
+  "icons": {
+    "16": "assets/icons/logo-16.png",
+    "32": "assets/icons/logo-32.png",
+    "48": "assets/icons/logo-48.png",
+    "128": "assets/icons/logo-128.png"
+  },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Importar Ordem do ERP Flex"
+    "default_title": "Importar Ordem do ERP Flex",
+    "default_icon": {
+      "16": "assets/icons/logo-16.png",
+      "32": "assets/icons/logo-32.png",
+      "48": "assets/icons/logo-48.png"
+    }
   },
   "background": {
     "service_worker": "src/background.js"
   },
   "permissions": [
     "storage",
-    "tabs"
+    "tabs",
+    "scripting"
   ],
   "host_permissions": [
     "http://*/*",

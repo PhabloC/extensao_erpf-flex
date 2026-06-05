@@ -1,0 +1,408 @@
+openapi: 3.1.0
+info:
+  title: Browser Extension Target System API Contract
+  version: 0.1.0
+  description: >
+    Contrato base para qualquer sistema destino que precise receber dados da
+    extensao de importacao do ERP Flex.
+  license:
+    name: Proprietary
+    identifier: LicenseRef-Proprietary
+servers:
+  - url: https://api.seu-outro-sistema.com
+tags:
+  - name: Auth
+    description: Autenticacao da extensao no sistema destino.
+  - name: ProductionOrderImports
+    description: Importacao de Ordem de Producao capturada pela extensao.
+security:
+  - bearerAuth: []
+paths:
+  /auth/login:
+    post:
+      summary: Authenticate extension operator
+      description: >
+        Autentica o usuario informado na extensao e retorna token bearer para a
+        operacao de importacao.
+      operationId: loginExtensionOperator
+      security: []
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Authentication succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Validation error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /production-orders/imports/erp-flex:
+    post:
+      summary: Import production order from ERP Flex
+      description: >
+        Recebe a OP capturada pela extensao, valida autenticacao, trata
+        duplicidade e cria o registro no sistema destino.
+      operationId: importProductionOrderFromErpFlex
+      tags:
+        - ProductionOrderImports
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImportProductionOrderFromErpFlexRequest'
+      responses:
+        '201':
+          description: Production order imported successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportProductionOrderSuccessResponse'
+        '400':
+          description: Validation error in imported payload.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required or expired token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: ERP production order already imported.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportProductionOrderConflictResponse'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 160
+          example: operador@empresa.com
+        password:
+          type: string
+          minLength: 8
+          maxLength: 128
+          example: senha-segura
+    LoginResponse:
+      type: object
+      required:
+        - accessToken
+        - user
+      properties:
+        accessToken:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        user:
+          $ref: '#/components/schemas/AuthUser'
+    AuthUser:
+      type: object
+      required:
+        - id
+        - email
+        - name
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+          maxLength: 80
+        role:
+          type:
+            - string
+            - 'null'
+          maxLength: 40
+          example: operator
+    ProductionOrderStatus:
+      type: string
+      enum:
+        - backlog
+        - ready
+        - in_progress
+        - paused
+        - done
+        - canceled
+      example: backlog
+    ProductionOrderOrigin:
+      type: string
+      enum:
+        - manual
+        - erp-flex
+      example: erp-flex
+    ProductionOrderItem:
+      type: object
+      required:
+        - productCode
+        - productDescription
+        - quantity
+      properties:
+        productCode:
+          type: string
+          minLength: 1
+          maxLength: 60
+          example: PRD-001
+        productDescription:
+          type: string
+          minLength: 1
+          maxLength: 240
+          example: Camiseta Polo Azul P
+        quantity:
+          type: number
+          exclusiveMinimum: 0
+          example: 100
+        unit:
+          type:
+            - string
+            - 'null'
+          maxLength: 20
+          example: un
+    ProductionOrderSourceMetadata:
+      type: object
+      required:
+        - origin
+      properties:
+        origin:
+          $ref: '#/components/schemas/ProductionOrderOrigin'
+        externalOrderId:
+          type:
+            - string
+            - 'null'
+          maxLength: 120
+          example: OP-12345
+        sourcePageUrl:
+          type:
+            - string
+            - 'null'
+          format: uri
+          example: https://erp-flex.exemplo.com/ordens/OP-12345
+        importedAt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        importedByUserId:
+          type:
+            - string
+            - 'null'
+          format: uuid
+    ProductionOrderHistoryEvent:
+      type: object
+      required:
+        - id
+        - eventType
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        eventType:
+          type: string
+          enum:
+            - created
+            - imported
+            - status_changed
+            - updated
+        fromStatus:
+          oneOf:
+            - $ref: '#/components/schemas/ProductionOrderStatus'
+            - type: 'null'
+        toStatus:
+          oneOf:
+            - $ref: '#/components/schemas/ProductionOrderStatus'
+            - type: 'null'
+        notes:
+          type:
+            - string
+            - 'null'
+          maxLength: 500
+        createdAt:
+          type: string
+          format: date-time
+        createdByUserId:
+          type:
+            - string
+            - 'null'
+          format: uuid
+    ProductionOrderDetail:
+      type: object
+      required:
+        - id
+        - orderNumber
+        - item
+        - status
+        - source
+        - history
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        orderNumber:
+          type: string
+          minLength: 1
+          maxLength: 120
+          example: OP-12345
+        item:
+          $ref: '#/components/schemas/ProductionOrderItem'
+        issueDate:
+          type:
+            - string
+            - 'null'
+          format: date
+        dueDate:
+          type:
+            - string
+            - 'null'
+          format: date
+        notes:
+          type:
+            - string
+            - 'null'
+          maxLength: 2000
+        status:
+          $ref: '#/components/schemas/ProductionOrderStatus'
+        source:
+          $ref: '#/components/schemas/ProductionOrderSourceMetadata'
+        createdAt:
+          type: string
+          format: date-time
+        createdByUserId:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductionOrderHistoryEvent'
+    ImportProductionOrderFromErpFlexRequest:
+      type: object
+      required:
+        - externalOrderId
+        - orderNumber
+        - item
+      properties:
+        externalOrderId:
+          type: string
+          minLength: 1
+          maxLength: 120
+          example: OP-12345
+        orderNumber:
+          type: string
+          minLength: 1
+          maxLength: 120
+          example: OP-12345
+        item:
+          $ref: '#/components/schemas/ProductionOrderItem'
+        issueDate:
+          type:
+            - string
+            - 'null'
+          format: date
+        dueDate:
+          type:
+            - string
+            - 'null'
+          format: date
+        notes:
+          type:
+            - string
+            - 'null'
+          maxLength: 2000
+        sourcePageUrl:
+          type:
+            - string
+            - 'null'
+          format: uri
+        rawPayload:
+          type:
+            - object
+            - 'null'
+          additionalProperties: true
+          description: Payload bruto opcional da captura para auditoria e suporte.
+    ImportProductionOrderSuccessResponse:
+      type: object
+      required:
+        - result
+        - productionOrder
+      properties:
+        result:
+          type: string
+          const: created
+        productionOrder:
+          $ref: '#/components/schemas/ProductionOrderDetail'
+    ImportProductionOrderConflictResponse:
+      type: object
+      required:
+        - result
+        - message
+        - existingProductionOrderId
+        - externalOrderId
+      properties:
+        result:
+          type: string
+          const: duplicate
+        message:
+          type: string
+          example: Production order already imported from ERP Flex.
+        existingProductionOrderId:
+          type: string
+          format: uuid
+        externalOrderId:
+          type: string
+          example: OP-12345
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          example: VALIDATION_ERROR
+        message:
+          type: string
+          example: Request payload is invalid.
+        details:
+          type:
+            - array
+            - 'null'
+          items:
+            type: object
+            additionalProperties: true

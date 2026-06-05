@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Configuração avançada</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="popup-shell">
+      <section class="popup-card popup-card--advanced">
+        <header class="popup-header popup-header--advanced">
+          <div class="brand-lockup">
+            <img
+              class="brand-logo"
+              src="assets/icons/logo-48.png"
+              alt="Logo Dois Pingos"
+              width="40"
+              height="40"
+            />
+            <div class="brand-copy">
+              <p class="brand-kicker">Dois Pingos</p>
+              <h1>Configuração avançada</h1>
+            </div>
+          </div>
+
+          <button
+            id="back-to-popup-button"
+            class="icon-button"
+            type="button"
+            aria-label="Voltar para a tela principal"
+          >
+            <span aria-hidden="true">&#8592;</span>
+          </button>
+        </header>
+
+        <section
+          class="advanced-page-section"
+          aria-labelledby="advanced-page-title"
+        >
+          <h2 id="advanced-page-title">API e autenticação</h2>
+
+          <div class="field">
+            <label for="api-base-url">URL base da API</label>
+            <input
+              id="api-base-url"
+              name="apiBaseUrl"
+              type="url"
+              placeholder="http://localhost:3000/api"
+              autocomplete="url"
+              required
+            />
+            <small
+              >Se informar sem `/api`, a extensão completa
+              automaticamente.</small
+            >
+          </div>
+
+          <div class="field">
+            <label for="user-email">E-mail do sistema</label>
+            <input
+              id="user-email"
+              name="userEmail"
+              type="email"
+              placeholder="usuario@empresa.com"
+              autocomplete="username"
+            />
+          </div>
+
+          <div class="field">
+            <label for="user-password">Senha do sistema</label>
+            <input
+              id="user-password"
+              name="userPassword"
+              type="password"
+              placeholder="Digite para renovar a sessão"
+              autocomplete="current-password"
+            />
+            <small
+              >A senha e usada para login e nunca fica salva na extensão.</small
+            >
+          </div>
+        </section>
+
+        <section class="session-card" aria-labelledby="session-title">
+          <h3 id="session-title">Sessão</h3>
+          <p id="session-summary" class="session-card__summary">
+            Nenhuma sessão autenticada salva.
+          </p>
+        </section>
+
+        <section
+          class="feedback-panel"
+          aria-labelledby="advanced-feedback-title"
+        >
+          <h2 id="advanced-feedback-title" class="sr-only">
+            Feedback operacional
+          </h2>
+          <p
+            id="status-message"
+            class="feedback-message"
+            role="status"
+            aria-live="polite"
+          >
+            Configure a API e renove a sessão quando necessário.
+          </p>
+          <div id="status-details" class="feedback-details" hidden></div>
+        </section>
+
+        <div class="actions">
+          <button
+            id="save-settings-button"
+            type="button"
+            class="action-button action-button--primary"
+          >
+            Salvar configuração
+          </button>
+          <button
+            id="authenticate-button"
+            type="button"
+            class="action-button action-button--secondary"
+          >
+            Renovar sessão
+          </button>
+          <button
+            id="clear-session-button"
+            type="button"
+            class="action-button action-button--ghost"
+          >
+            Limpar sessão
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <script src="src/advanced-settings.js"></script>
+  </body>
+</html>

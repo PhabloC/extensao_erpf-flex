@@ -3,77 +3,201 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ERP Flex para Kanban</title>
+    <title>Importar OP para Kanban</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
-    <main class="popup">
-      <header class="popup__header">
-        <p class="popup__eyebrow">ERP Flex para Kanban</p>
-        <h1>Importar ordem do ERP</h1>
-        <p class="popup__copy">
-          Abra a ordem no ERP Flex, informe a API do sistema e execute a importacao.
-        </p>
-      </header>
-
-      <form id="import-form" class="popup__form">
-        <div class="field">
-          <label for="api-base-url">URL base da API</label>
-          <input
-            id="api-base-url"
-            name="apiBaseUrl"
-            type="url"
-            placeholder="http://localhost:3000/api"
-            autocomplete="url"
-            required
-          />
-          <small>Se informar sem `/api`, a extensao completa automaticamente.</small>
-        </div>
-
-        <div class="field">
-          <label for="user-email">E-mail do sistema</label>
-          <input
-            id="user-email"
-            name="userEmail"
-            type="email"
-            placeholder="usuario@empresa.com"
-            autocomplete="username"
-          />
-        </div>
-
-        <div class="field">
-          <label for="user-password">Senha do sistema</label>
-          <input
-            id="user-password"
-            name="userPassword"
-            type="password"
-            placeholder="Digite apenas para renovar a sessao"
-            autocomplete="current-password"
-          />
-          <small>A senha e usada para login e nunca fica salva na extensao.</small>
-        </div>
-
-        <section class="session-card" aria-labelledby="session-title">
-          <h2 id="session-title">Sessao</h2>
-          <p id="session-summary" class="session-card__summary">
-            Nenhuma sessao autenticada salva.
-          </p>
-        </section>
-
-        <div class="actions">
-          <button id="import-button" type="submit">Importar ordem atual</button>
-          <button id="clear-session-button" type="button" class="button-secondary">
-            Limpar sessao
+    <main class="popup-shell">
+      <section class="popup-frame">
+        <aside class="popup-sidebar" aria-label="Ações da extensão">
+          <button
+            id="open-advanced-settings-button"
+            class="icon-button icon-button--sidebar"
+            type="button"
+            aria-label="Abrir configuração da API"
+          >
+            <span aria-hidden="true">&#9881;</span>
           </button>
-        </div>
-      </form>
+        </aside>
 
-      <section class="status-card" aria-labelledby="status-title">
-        <h2 id="status-title">Status</h2>
-        <p id="status-message" class="status-card__message" role="status" aria-live="polite">
-          Aguardando acao.
-        </p>
-        <pre id="status-details" class="status-card__details" hidden></pre>
+        <section class="popup-card">
+          <header class="popup-header">
+            <div class="brand-lockup">
+              <img
+                class="brand-logo"
+                src="assets/icons/logo-48.png"
+                alt="Logo Dois Pingos"
+                width="40"
+                height="40"
+              />
+              <div class="brand-copy">
+                <p class="brand-kicker">Dois Pingos</p>
+                <h1>Importar OP para o Kanban</h1>
+              </div>
+            </div>
+          </header>
+
+          <section
+            id="date-filter-section"
+            class="date-filter"
+            aria-labelledby="date-filter-title"
+          >
+            <div class="date-filter__header">
+              <h2 id="date-filter-title">Período de emissão</h2>
+            </div>
+
+            <div class="date-filter__grid">
+              <div class="field field--compact">
+                <label for="issue-date-from">Emissão de</label>
+                <input id="issue-date-from" type="date" />
+              </div>
+
+              <div class="field field--compact">
+                <label for="issue-date-to">Emissão até</label>
+                <input id="issue-date-to" type="date" />
+              </div>
+            </div>
+          </section>
+
+          <section
+            id="order-selector-section"
+            class="order-selector"
+            hidden
+            aria-labelledby="order-selector-title"
+          >
+            <div class="order-selector__header">
+              <h2 id="order-selector-title">Ordens encontradas</h2>
+              <span id="order-selector-count" class="order-selector__count"
+                >0 OPs</span
+              >
+            </div>
+
+            <div class="order-picker">
+              <button
+                id="order-selector-trigger"
+                class="order-picker__trigger"
+                type="button"
+                aria-haspopup="listbox"
+                aria-expanded="false"
+                aria-controls="order-selector-list"
+              >
+                Selecionar ordem
+              </button>
+
+              <div id="order-selector-panel" class="order-picker__panel" hidden>
+                <div
+                  id="order-selector-list"
+                  class="order-picker__list"
+                  role="listbox"
+                  aria-label="Selecionar ordem"
+                ></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="capture-section" aria-labelledby="capture-title">
+            <h2 id="capture-title">Dados capturados desta página</h2>
+
+            <dl class="capture-list">
+              <div class="capture-row">
+                <dt>OP:</dt>
+                <dd id="capture-order-number">Não capturada</dd>
+              </div>
+              <div class="capture-row">
+                <dt>Produto ERP:</dt>
+                <dd id="capture-product-erp">Não capturado</dd>
+              </div>
+              <div class="capture-row">
+                <dt>Codigo:</dt>
+                <dd id="capture-product-code">Não capturado</dd>
+              </div>
+              <div class="capture-row">
+                <dt>Cliente:</dt>
+                <dd id="capture-customer-name">Não capturado</dd>
+              </div>
+              <div class="capture-row">
+                <dt>Produto base:</dt>
+                <dd id="capture-product-base">Não identificado</dd>
+              </div>
+              <div class="capture-row">
+                <dt>Variacoes:</dt>
+                <dd id="capture-variations">Não identificadas</dd>
+              </div>
+              <div class="capture-row">
+                <dt>Quantidade:</dt>
+                <dd id="capture-quantity">Não capturada</dd>
+              </div>
+              <div class="capture-row">
+                <dt>Prazo:</dt>
+                <dd id="capture-due-date">Não capturado</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section class="mapping-section" aria-labelledby="mapping-title">
+            <h2 id="mapping-title">Status do mapeamento:</h2>
+            <p id="mapping-status" class="mapping-badge mapping-badge--neutral">
+              Aguardando leitura da página
+            </p>
+          </section>
+
+          <section
+            class="traceability-card"
+            aria-label="Fluxo de rastreabilidade"
+          >
+            <div class="traceability-node">
+              <span class="traceability-icon" aria-hidden="true">E</span>
+              <div>
+                <p class="traceability-label">Origem:</p>
+                <strong>ERP Flex</strong>
+              </div>
+            </div>
+
+            <div class="traceability-divider" aria-hidden="true"></div>
+
+            <div class="traceability-node">
+              <span
+                class="traceability-icon traceability-icon--target"
+                aria-hidden="true"
+                >K</span
+              >
+              <div>
+                <p class="traceability-label">Destino:</p>
+                <strong>Sistema Dois Pingos</strong>
+              </div>
+            </div>
+          </section>
+
+          <section class="feedback-panel" aria-labelledby="feedback-title">
+            <h2 id="feedback-title" class="sr-only">Feedback operacional</h2>
+            <p
+              id="status-message"
+              class="feedback-message"
+              role="status"
+              aria-live="polite"
+            >
+              Abra uma ordem no ERP Flex para revisar os dados antes da criação.
+            </p>
+            <div id="status-details" class="feedback-details" hidden></div>
+          </section>
+
+          <div class="actions">
+            <button
+              id="import-button"
+              type="button"
+              class="action-button action-button--primary"
+            >
+              Criar OP no Kanban
+            </button>
+            <button
+              id="review-button"
+              type="button"
+              class="action-button action-button--secondary"
+            >
+              Revisar dados
+            </button>
+          </div>
+        </section>
       </section>
     </main>
 
