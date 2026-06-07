@@ -24,8 +24,16 @@ body {
   border-radius: 0;
   overflow: hidden;
   background:
-    radial-gradient(circle at 65% 18%, rgba(49, 130, 246, 0.24), transparent 24%),
-    radial-gradient(circle at 50% 55%, rgba(19, 54, 112, 0.34), transparent 40%),
+    radial-gradient(
+      circle at 65% 18%,
+      rgba(49, 130, 246, 0.24),
+      transparent 24%
+    ),
+    radial-gradient(
+      circle at 50% 55%,
+      rgba(19, 54, 112, 0.34),
+      transparent 40%
+    ),
     linear-gradient(180deg, #08224b 0%, #061937 100%);
 }
 
@@ -435,6 +443,12 @@ input:focus-visible {
   font-size: 11px;
 }
 
+img.traceability-icon {
+  display: block;
+  background: transparent;
+  object-fit: contain;
+}
+
 .traceability-icon--target {
   background: linear-gradient(180deg, #4c7ef0 0%, #355fd8 100%);
 }
@@ -457,6 +471,7 @@ input:focus-visible {
   height: 1px;
   width: 100%;
   background: linear-gradient(90deg, #6f86b5 0%, #a9bfeb 100%);
+  margin-left: -15px;
 }
 
 .traceability-divider::after {
@@ -606,7 +621,7 @@ input:focus-visible {
 .action-button--ghost:hover:not(:disabled),
 .icon-button:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.14);
-  }
+}
 
 .sr-only {
   position: absolute;

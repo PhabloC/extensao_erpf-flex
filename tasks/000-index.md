@@ -59,7 +59,7 @@ Projeto reduzido para as stacks ativas `front-end` (React/Vite) e `backend`, pre
 - A extensao ainda usa um placeholder de marca; a change request 017 aplica `logo.png` como icone nativo e no cabeçalho da popup.
 - O cabeçalho da popup ainda precisa seguir a composição visual da marca enviada em print; a change request 018 ajusta logo e textos empilhados.
 - O fluxo de rastreabilidade ainda usa um traço neutro; a change request 019 troca isso por uma seta central apontando para a direita.
-- O card de rastreabilidade ainda precisa de ajuste fino de proporção; a change request 020 refina o espaçamento entre origem, seta e destino.
+- O card de rastreabilidade ainda precisa de ajuste fino de proporção; a change request 020 refina o espaçamento entre origem, seta e destino, agora com logos reais nos dois nós.
 - As configurações técnicas ainda estão expostas demais no painel da engrenagem; a change request 021 move isso para uma seção avançada.
 - O CSS da popup ainda está anulando `hidden` em alguns painéis; a change request 022 corrige esse comportamento.
 - A configuração avançada ainda precisa sair da popup principal; a change request 023 move isso para uma página interna da extensão acionada pela engrenagem.

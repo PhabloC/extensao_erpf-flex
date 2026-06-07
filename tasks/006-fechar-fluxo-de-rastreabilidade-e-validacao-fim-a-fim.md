@@ -122,7 +122,7 @@ Concluir o fluxo fim a fim exibindo origem ERP no front-end, feedback operaciona
 ## Resultado da execucao
 - `front-end`: detalhe da ordem passou a expor origem formatada, id externo ERP, URL de origem, horario de importacao, usuario importador e notas completas do historico de importacao para auditoria operacional sem criar estado paralelo.
 - `backend`: importacao ERP agora registra notas tecnicas no evento `imported` e persiste `source_payload_snapshot` com o payload bruto coletado pela extensao para diagnostico posterior; foi adicionada migration dedicada para ambientes com PostgreSQL e `synchronize: false`.
-- `browser-extension`: feedback de sucesso e resumo local da ultima importacao foram enriquecidos com `externalOrderId`, facilitando rastreabilidade imediata no popup.
+- `extensao-dois-pingos`: feedback de sucesso e resumo local da ultima importacao foram enriquecidos com `externalOrderId`, facilitando rastreabilidade imediata no popup.
 - Decisao tecnica: a trilha de auditoria foi concentrada no historico ja existente e no snapshot bruto persistido no backend, evitando expandir o contrato de leitura do front sem necessidade funcional imediata.
 - Relacao com contrato: nenhuma rota foi alterada; o fluxo continua aderente a `contracts/openapi.yaml#/paths`, aproveitando os campos ja previstos em `ProductionOrderSourceMetadata` e `rawPayload` do request de importacao.
 
@@ -137,9 +137,9 @@ Concluir o fluxo fim a fim exibindo origem ERP no front-end, feedback operaciona
 - `front-end/src/pages/Main/Dashboard/index.tsx`
 - `front-end/src/pages/Main/Dashboard/styles.module.css`
 - `front-end/src/pages/Main/Dashboard/index.test.tsx`
-- `browser-extension/src/popup.js`
-- `browser-extension/src/background.js`
-- `browser-extension/README.md`
+- `extensao-dois-pingos/src/popup.js`
+- `extensao-dois-pingos/src/background.js`
+- `extensao-dois-pingos/README.md`
 
 ## Validacoes executadas
 - `cd front-end && npm run lint`: ok
@@ -148,7 +148,7 @@ Concluir o fluxo fim a fim exibindo origem ERP no front-end, feedback operaciona
 - `cd backend && npm run lint`: ok
 - `cd backend && npm run test`: ok
 - `cd backend && npm run build`: ok
-- `cd browser-extension && npm run check`: ok
+- `cd extensao-dois-pingos && npm run check`: ok
 - validacao manual da extensao instalada: nao executada neste workspace por depender de navegador com a extensao carregada e acesso a uma pagina real ou simulada do ERP Flex
 
 ## Aderencia ao design system

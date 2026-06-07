@@ -28,7 +28,7 @@ Extensao MV3 para importar uma Ordem de Producao aberta no ERP Flex para o backe
 1. Abra `chrome://extensions` ou `edge://extensions`.
 2. Ative `Modo do desenvolvedor`.
 3. Clique em `Carregar sem compactacao`.
-4. Selecione a pasta [browser-extension](c:/Users/phabl/Desktop/projects/erp-flex-para-kanban/browser-extension).
+4. Selecione a pasta [extensao-dois-pingos](c:/Users/phabl/Desktop/projects/erp-flex-para-kanban/extensao-dois-pingos).
 
 ## Uso no MVP
 
@@ -44,7 +44,7 @@ Extensao MV3 para importar uma Ordem de Producao aberta no ERP Flex para o backe
 ## Check local
 
 ```bash
-cd browser-extension
+cd extensao-dois-pingos
 npm run check
 ```
 

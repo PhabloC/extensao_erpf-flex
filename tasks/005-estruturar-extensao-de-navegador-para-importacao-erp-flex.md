@@ -117,26 +117,26 @@ Criar o MVP da extensao de navegador capaz de reconhecer a pagina suportada do E
 - o ERP real pode exigir ajuste no seletor, parsing ou estrategia de captura
 
 ## Resultado da execucao
-- `front-end`: criada a pasta isolada `browser-extension/` com popup acessivel, script de coleta da pagina ERP e documentacao minima de instalacao/uso.
+- `front-end`: criada a pasta isolada `extensao-dois-pingos/` com popup acessivel, script de coleta da pagina ERP e documentacao minima de instalacao/uso.
 - `backend`: a extensao foi conectada ao fluxo real ja existente de `/auth/login` e `POST /production-orders/imports/erp-flex`, sem alterar contrato nem endpoint do backend.
 - Decisoes tecnicas: uso de `manifest_version: 3`, armazenamento apenas de `apiBaseUrl`, `userEmail`, `accessToken` e resumo da ultima importacao em `chrome.storage.local`; a senha e usada somente para renovar sessao e nao e persistida.
 - Trade-offs: como a URL real do ERP Flex ainda nao foi confirmada, o manifesto ficou com `host_permissions` amplas para o MVP e o extrator usa heuristicas genericas de JSON estruturado e DOM, com necessidade de ajuste fino no discovery real.
 - Relacao com contrato: a extensao envia payload aderente ao schema de `ImportProductionOrderFromErpFlexRequest` e trata respostas de `201`, `401` e `409` previstas em `contracts/openapi.yaml`.
 
 ## Arquivos alterados
-- `browser-extension/manifest.json`
-- `browser-extension/popup.html`
-- `browser-extension/popup.css`
-- `browser-extension/src/background.js`
-- `browser-extension/src/content-script.js`
-- `browser-extension/src/popup.js`
-- `browser-extension/package.json`
-- `browser-extension/scripts/check.mjs`
-- `browser-extension/README.md`
+- `extensao-dois-pingos/manifest.json`
+- `extensao-dois-pingos/popup.html`
+- `extensao-dois-pingos/popup.css`
+- `extensao-dois-pingos/src/background.js`
+- `extensao-dois-pingos/src/content-script.js`
+- `extensao-dois-pingos/src/popup.js`
+- `extensao-dois-pingos/package.json`
+- `extensao-dois-pingos/scripts/check.mjs`
+- `extensao-dois-pingos/README.md`
 - `tasks/005-estruturar-extensao-de-navegador-para-importacao-erp-flex.md`
 
 ## Validacoes executadas
-- `cd browser-extension && npm run check`: ok
+- `cd extensao-dois-pingos && npm run check`: ok
 - Revisao manual do fluxo de mensagens da extensao contra o contrato e os endpoints reais do backend: ok
 - Teste manual de instalacao local em navegador: nao executado neste ambiente
 - Teste manual de fluxo de importacao com API do backend via navegador: nao executado neste ambiente

@@ -99,8 +99,10 @@ Refinar a proporção de gaps, colunas e padding do card para deixar o bloco mai
 ## Resultado da execucao
 - `front-end/browser-extension`: o card de rastreabilidade recebeu ajuste de grid, gaps e padding para melhorar a proporção entre origem, seta e destino.
 - `front-end/browser-extension`: a coluna central da seta ficou um pouco mais larga, reduzindo a sensação de aperto visual.
+- `front-end/browser-extension`: os placeholders textuais dos nós de origem e destino foram trocados pelas imagens `logo-erp.png` e `logo-48.png`, mantendo o alinhamento do card.
 
 ## Arquivos alterados
+- `browser-extension/popup.html`
 - `browser-extension/popup.css`
 - `tasks/change-requests/020-refinar-espacamento-do-card-de-rastreabilidade.md`
 - `tasks/000-index.md`
@@ -113,6 +115,7 @@ Refinar a proporção de gaps, colunas e padding do card para deixar o bloco mai
 
 ## Pendencias pos-task
 - validar manualmente no navegador se o espaçamento ficou na proporção desejada.
+- validar manualmente no navegador se as logos do card permanecem legíveis no tamanho reduzido sem desalinhamento visual.
 
 ## Status final
 blocked
