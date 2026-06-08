@@ -38,7 +38,7 @@ Extensao MV3 para importar uma Ordem de Producao aberta no ERP Flex para o backe
 4. Informe o e-mail do sistema.
 5. Informe a senha apenas quando precisar renovar a sessao.
 6. Se a pagina do ERP trouxer varias ordens, escolha a OP desejada no dropdown compacto da popup.
-7. Se necessario, ajuste o periodo de emissao diretamente na popup e clique em `Revisar aba ativa`.
+7. Se necessario, ajuste o periodo de emissao diretamente na popup e clique em `Fazer analise`.
 8. Revise os dados capturados, com atencao ao `Codigo`, e clique em `Criar OP no Kanban`.
 
 ## Check local
@@ -58,12 +58,12 @@ npm run check
 
 ## Funcoes da engrenagem
 
-- `Revisar aba ativa`: rele a aba atual e atualiza a captura da OP.
+- `Fazer analise`: rele a aba atual e atualiza a captura das OPs encontradas no ERP.
 - `Abrir pagina capturada`: abre a URL da origem atualmente capturada.
 - `Carregar preview visual`: injeta um estado mockado para revisar o layout.
 - `Configuracao avancada`: abre uma pagina interna da extensao para configurar API, e-mail, senha, sessao e renovacao de token.
 
-Se a extensao tiver sido recarregada com a pagina do ERP ja aberta, `Revisar aba ativa` tenta reinjetar automaticamente o coletor na aba antes de falhar. Quando a aba nao puder receber scripts, a popup passa a orientar recarga da pagina suportada em vez de mostrar a mensagem crua do navegador.
+Se a extensao tiver sido recarregada com a pagina do ERP ja aberta, `Fazer analise` tenta reinjetar automaticamente o coletor na aba antes de falhar. Quando a aba nao puder receber scripts, a popup passa a orientar recarga da pagina suportada em vez de mostrar a mensagem crua do navegador.
 
 ## Validacao manual fim a fim
 

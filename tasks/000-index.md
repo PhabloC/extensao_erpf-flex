@@ -67,6 +67,9 @@ Projeto reduzido para as stacks ativas `front-end` (React/Vite) e `backend`, pre
 - A engrenagem ainda está ambígua para o usuário final; a change request 025 simplifica o clique para abrir diretamente a configuração da API.
 - O cabeçalho da configuração avançada ainda precisa de melhor composição; a change request 026 alinha o botão de voltar na extremidade direita.
 - A popup principal ainda carrega referências órfãs a um botão removido; a change request 027 limpa esse resíduo para eliminar erro em runtime.
+- O fluxo da popup ainda nao explicita a etapa de analise para puxar as OPs do ERP; a change request 028 separa essa acao antes da criacao no kanban.
+- A popup ainda pode quebrar quando o script tenta controlar botoes removidos do HTML; a change request 029 blinda esse controle de estado.
+- A tela avancada ainda precisa reposicionar a seta de voltar para o inicio do cabeçalho; a change request 030 aplica esse ajuste visual.
 
 ## Estrategia de execucao
 
@@ -106,6 +109,9 @@ Projeto reduzido para as stacks ativas `front-end` (React/Vite) e `backend`, pre
 - [blocked] `tasks/change-requests/025-fazer-engrenagem-abrir-diretamente-a-configuracao-da-api.md` - Fazer a engrenagem abrir diretamente a configuracao da API.
 - [blocked] `tasks/change-requests/026-alinhar-botao-de-voltar-a-direita-no-cabecalho-avancado.md` - Alinhar o botao de voltar a direita no cabecalho da configuracao avancada.
 - [blocked] `tasks/change-requests/027-remover-referencias-orfas-ao-botao-de-pagina-capturada.md` - Remover referencias orfas ao botao de pagina capturada.
+- [done] `tasks/change-requests/028-adicionar-botao-de-fazer-analise-para-buscar-ops-do-erp.md` - Adicionar botao explicito de analise para puxar as OPs da pagina atual do ERP.
+- [done] `tasks/change-requests/029-corrigir-null-reference-na-popup-ao-controlar-botoes-ausentes.md` - Corrigir null reference na popup ao controlar botoes ausentes.
+- [done] `tasks/change-requests/030-mover-seta-de-voltar-para-o-canto-esquerdo-da-configuracao-avancada.md` - Mover a seta de voltar para o canto esquerdo da configuracao avancada.
 - [done] `tasks/001-definir-contrato-e-modelo-de-ordem-de-producao.md` - Definir contrato OpenAPI e modelo funcional do MVP de Ordem de Producao.
 - [done] `tasks/005-estruturar-extensao-de-navegador-para-importacao-erp-flex.md` - Criar a extensao MVP para importar ordens do ERP Flex.
 - [blocked] `tasks/006-fechar-fluxo-de-rastreabilidade-e-validacao-fim-a-fim.md` - Consolidar rastreabilidade da origem ERP e validar o fluxo ponta a ponta.
@@ -163,6 +169,9 @@ Projeto reduzido para as stacks ativas `front-end` (React/Vite) e `backend`, pre
 - `tasks/change-requests/025-fazer-engrenagem-abrir-diretamente-a-configuracao-da-api.md`: depende de `tasks/change-requests/024-redesenhar-popup-com-layout-lateral-e-paleta-escura.md` e simplifica a engrenagem para navegação direta à tela avançada.
 - `tasks/change-requests/026-alinhar-botao-de-voltar-a-direita-no-cabecalho-avancado.md`: depende de `tasks/change-requests/025-fazer-engrenagem-abrir-diretamente-a-configuracao-da-api.md` e refina a composição do cabeçalho da tela avançada.
 - `tasks/change-requests/027-remover-referencias-orfas-ao-botao-de-pagina-capturada.md`: depende de `tasks/change-requests/025-fazer-engrenagem-abrir-diretamente-a-configuracao-da-api.md` e remove resíduos técnicos deixados pela simplificação da engrenagem.
+- `tasks/change-requests/028-adicionar-botao-de-fazer-analise-para-buscar-ops-do-erp.md`: depende de `tasks/005-estruturar-extensao-de-navegador-para-importacao-erp-flex.md` e `tasks/change-requests/027-remover-referencias-orfas-ao-botao-de-pagina-capturada.md`, separando explicitamente a etapa de analise da etapa de criacao da OP no kanban.
+- `tasks/change-requests/029-corrigir-null-reference-na-popup-ao-controlar-botoes-ausentes.md`: depende de `tasks/change-requests/028-adicionar-botao-de-fazer-analise-para-buscar-ops-do-erp.md` e corrige a regressao de runtime deixada por referencias a controles opcionais removidos.
+- `tasks/change-requests/030-mover-seta-de-voltar-para-o-canto-esquerdo-da-configuracao-avancada.md`: depende de `tasks/change-requests/026-alinhar-botao-de-voltar-a-direita-no-cabecalho-avancado.md` e inverte essa decisao visual para atender o novo posicionamento pedido pelo usuario.
 
 ## Duvidas para validacao humana
 

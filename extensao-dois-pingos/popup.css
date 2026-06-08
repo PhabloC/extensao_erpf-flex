@@ -171,6 +171,10 @@ input:focus-visible {
   height: 40px;
 }
 
+.icon-button--leading {
+  flex: 0 0 auto;
+}
+
 .capture-section,
 .mapping-section,
 .advanced-page-section {
@@ -497,6 +501,16 @@ img.traceability-icon {
   color: #dce7ff;
 }
 
+.feedback-hint {
+  margin: 0;
+  font-size: 11px;
+  color: #9fb4db;
+}
+
+.feedback-hint strong {
+  color: #e9f1ff;
+}
+
 .feedback-message--error {
   color: #b53030;
 }
@@ -576,7 +590,8 @@ img.traceability-icon {
 
 .popup-header--advanced {
   align-items: flex-start;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 12px;
   width: 100%;
 }
 

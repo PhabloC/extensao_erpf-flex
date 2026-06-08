@@ -1,27 +1,27 @@
-const statusMessage = document.getElementById('status-message');
-const statusDetails = document.getElementById('status-details');
-const mappingStatus = document.getElementById('mapping-status');
-const importButton = document.getElementById('import-button');
-const reviewButton = document.getElementById('review-button');
-const loadPreviewButton = document.getElementById('load-preview-button');
+const statusMessage = document.getElementById("status-message");
+const statusDetails = document.getElementById("status-details");
+const mappingStatus = document.getElementById("mapping-status");
+const importButton = document.getElementById("import-button");
+const reviewButton = document.getElementById("review-button");
+const loadPreviewButton = document.getElementById("load-preview-button");
 const openAdvancedSettingsButton = document.getElementById(
-  'open-advanced-settings-button',
+  "open-advanced-settings-button",
 );
-const issueDateFromInput = document.getElementById('issue-date-from');
-const issueDateToInput = document.getElementById('issue-date-to');
-const orderSelectorSection = document.getElementById('order-selector-section');
-const orderSelectorCount = document.getElementById('order-selector-count');
-const orderSelectorTrigger = document.getElementById('order-selector-trigger');
-const orderSelectorPanel = document.getElementById('order-selector-panel');
-const orderSelectorList = document.getElementById('order-selector-list');
-const captureOrderNumber = document.getElementById('capture-order-number');
-const captureProductErp = document.getElementById('capture-product-erp');
-const captureProductCode = document.getElementById('capture-product-code');
-const captureCustomerName = document.getElementById('capture-customer-name');
-const captureProductBase = document.getElementById('capture-product-base');
-const captureVariations = document.getElementById('capture-variations');
-const captureQuantity = document.getElementById('capture-quantity');
-const captureDueDate = document.getElementById('capture-due-date');
+const issueDateFromInput = document.getElementById("issue-date-from");
+const issueDateToInput = document.getElementById("issue-date-to");
+const orderSelectorSection = document.getElementById("order-selector-section");
+const orderSelectorCount = document.getElementById("order-selector-count");
+const orderSelectorTrigger = document.getElementById("order-selector-trigger");
+const orderSelectorPanel = document.getElementById("order-selector-panel");
+const orderSelectorList = document.getElementById("order-selector-list");
+const captureOrderNumber = document.getElementById("capture-order-number");
+const captureProductErp = document.getElementById("capture-product-erp");
+const captureProductCode = document.getElementById("capture-product-code");
+const captureCustomerName = document.getElementById("capture-customer-name");
+const captureProductBase = document.getElementById("capture-product-base");
+const captureVariations = document.getElementById("capture-variations");
+const captureQuantity = document.getElementById("capture-quantity");
+const captureDueDate = document.getElementById("capture-due-date");
 
 const state = {
   currentPayload: null,
@@ -34,28 +34,28 @@ const NO_RECEIVER_ERROR_PATTERN =
   /receiving end does not exist|could not establish connection/i;
 
 const MOCK_PREVIEW_PAYLOAD = {
-  externalOrderId: 'OP-12345',
-  orderNumber: 'OP-12345',
+  externalOrderId: "OP-12345",
+  orderNumber: "OP-12345",
   item: {
-    productCode: 'CAMISETA POLO',
-    productDescription: 'CAMISETA POLO AZUL P',
+    productCode: "CAMISETA POLO",
+    productDescription: "CAMISETA POLO AZUL P",
     quantity: 100,
-    unit: '',
+    unit: "",
   },
-  dueDate: '2026-06-10',
-  sourcePageUrl: 'https://erp-flex.local/ordens/OP-12345',
+  dueDate: "2026-06-10",
+  sourcePageUrl: "https://erp-flex.local/ordens/OP-12345",
   rawPayload: {
-    extractionStrategy: 'preview-mock',
+    extractionStrategy: "preview-mock",
     candidates: {
-      orderNumber: 'OP-12345',
-      externalOrderId: 'OP-12345',
-      customerName: 'Cliente Exemplo',
-      productDescription: 'CAMISETA POLO AZUL P',
-      baseProduct: 'CAMISETA POLO',
-      color: 'Azul',
-      size: 'P',
+      orderNumber: "OP-12345",
+      externalOrderId: "OP-12345",
+      customerName: "Cliente Exemplo",
+      productDescription: "CAMISETA POLO AZUL P",
+      baseProduct: "CAMISETA POLO",
+      color: "Azul",
+      size: "P",
       quantity: 100,
-      dueDate: '10/06/2026',
+      dueDate: "10/06/2026",
     },
   },
 };
@@ -63,32 +63,33 @@ const MOCK_PREVIEW_PAYLOAD = {
 const MOCK_PREVIEW_OPTIONS = [
   structuredClone(MOCK_PREVIEW_PAYLOAD),
   {
-    externalOrderId: '6266580',
-    orderNumber: '0000000567',
+    externalOrderId: "6266580",
+    orderNumber: "0000000567",
     item: {
-      productCode: '10AC7524P',
+      productCode: "10AC7524P",
       productDescription:
-        'Ombrelone Redondo 2,40m; armacao/vareta Aluminio, tecido Poliester PVC SLIM-Personalizado',
+        "Ombrelone Redondo 2,40m; armacao/vareta Aluminio, tecido Poliester PVC SLIM-Personalizado",
       quantity: 4,
-      unit: 'UN',
+      unit: "UN",
     },
-    dueDate: '2026-06-19',
-    notes: 'SILK MINIKAY | COSTURA DP',
-    sourcePageUrl: 'https://app.erpflex.com.br/erp/lancamentos/producao/ordensproducao',
+    dueDate: "2026-06-19",
+    notes: "SILK MINIKAY | COSTURA DP",
+    sourcePageUrl:
+      "https://app.erpflex.com.br/erp/lancamentos/producao/ordensproducao",
     rawPayload: {
-      extractionStrategy: 'preview-mock',
-      selectionKey: '6266580|0000000567|10AC7524P',
+      extractionStrategy: "preview-mock",
+      selectionKey: "6266580|0000000567|10AC7524P",
       candidates: {
-        orderNumber: '0000000567',
-        externalOrderId: '6266580',
-        customerName: 'PRAXI SERVICOS LTDA',
-        productCode: '10AC7524P',
+        orderNumber: "0000000567",
+        externalOrderId: "6266580",
+        customerName: "PRAXI SERVICOS LTDA",
+        productCode: "10AC7524P",
         productDescription:
-          'Ombrelone Redondo 2,40m; armacao/vareta Aluminio, tecido Poliester PVC SLIM-Personalizado',
-        baseProduct: '10AC7524P',
-        variations: 'Azul Guanabara C/Abas',
+          "Ombrelone Redondo 2,40m; armacao/vareta Aluminio, tecido Poliester PVC SLIM-Personalizado",
+        baseProduct: "10AC7524P",
+        variations: "Azul Guanabara C/Abas",
         quantity: 4,
-        dueDate: '19/06/2026',
+        dueDate: "19/06/2026",
       },
     },
   },
@@ -99,8 +100,8 @@ function sendRuntimeMessage(message) {
 }
 
 function normalizeText(value) {
-  return String(value ?? '')
-    .replace(/\s+/g, ' ')
+  return String(value ?? "")
+    .replace(/\s+/g, " ")
     .trim();
 }
 
@@ -115,17 +116,19 @@ function buildPayloadSelectionKey(payload) {
     normalizeText(payload?.item?.productCode),
   ]
     .filter(Boolean)
-    .join('|');
+    .join("|");
 }
 
 function normalizeDateInputValue(value) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(normalizeText(value)) ? normalizeText(value) : '';
+  return /^\d{4}-\d{2}-\d{2}$/.test(normalizeText(value))
+    ? normalizeText(value)
+    : "";
 }
 
 function formatDateInputValue(date) {
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
 }
@@ -146,11 +149,11 @@ function formatDate(value) {
   const normalized = normalizeText(value);
 
   if (!normalized) {
-    return 'Nao capturado';
+    return "Não capturado";
   }
 
   if (/^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
-    const [year, month, day] = normalized.split('-');
+    const [year, month, day] = normalized.split("-");
     return `${day}/${month}/${year}`;
   }
 
@@ -158,13 +161,13 @@ function formatDate(value) {
 }
 
 function formatQuantity(value, unit) {
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
-    return 'Nao capturada';
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return "Não capturada";
   }
 
   const renderedValue = Number.isInteger(value)
     ? String(value)
-    : value.toLocaleString('pt-BR', {
+    : value.toLocaleString("pt-BR", {
         minimumFractionDigits: 0,
         maximumFractionDigits: 2,
       });
@@ -185,52 +188,56 @@ function formatPeriodLabel(issueDateFrom, issueDateTo) {
     return `${fromLabel} ate ${toLabel}`;
   }
 
-  return 'Nao informado';
+  return "Não informado";
 }
 
 function setFeedbackTone(tone) {
   statusMessage.classList.remove(
-    'feedback-message--error',
-    'feedback-message--success',
+    "feedback-message--error",
+    "feedback-message--success",
   );
 
-  if (tone === 'error') {
-    statusMessage.classList.add('feedback-message--error');
+  if (tone === "error") {
+    statusMessage.classList.add("feedback-message--error");
   }
 
-  if (tone === 'success') {
-    statusMessage.classList.add('feedback-message--success');
+  if (tone === "success") {
+    statusMessage.classList.add("feedback-message--success");
   }
 }
 
 function isSupportedTabUrl(url) {
   const normalizedUrl = normalizeText(url);
 
-  return normalizedUrl.startsWith('http://') || normalizedUrl.startsWith('https://');
+  return (
+    normalizedUrl.startsWith("http://") || normalizedUrl.startsWith("https://")
+  );
 }
 
 function isReceiverMissingError(error) {
   return NO_RECEIVER_ERROR_PATTERN.test(
-    error instanceof Error ? error.message : String(error ?? ''),
+    error instanceof Error ? error.message : String(error ?? ""),
   );
 }
 
 function buildReceiverGuidance(activeTab) {
   if (!isSupportedTabUrl(activeTab?.url)) {
-    return 'Abra uma pagina http ou https do ERP Flex e tente novamente.';
+    return "Abra uma página http ou https do ERP Flex e tente novamente.";
   }
 
-  return 'Recarregue a pagina do ERP Flex e clique em "Revisar aba ativa" novamente.';
+  return 'Recarregue a página do ERP Flex e clique em "Fazer análise" novamente.';
 }
 
 async function requestOrderCollection(activeTab) {
   if (!activeTab?.id) {
-    throw new Error('Nao foi possivel identificar a aba ativa para coletar a ordem.');
+    throw new Error(
+      "Não foi possível identificar a aba ativa para coletar a ordem.",
+    );
   }
 
   try {
     return await chrome.tabs.sendMessage(activeTab.id, {
-      type: 'ERP_FLEX_COLLECT_ORDER',
+      type: "ERP_FLEX_COLLECT_ORDER",
       filters: state.activeFilters,
     });
   } catch (error) {
@@ -246,12 +253,12 @@ async function requestOrderCollection(activeTab) {
       target: {
         tabId: activeTab.id,
       },
-      files: ['src/content-script.js'],
+      files: ["src/content-script.js"],
     });
 
     try {
       return await chrome.tabs.sendMessage(activeTab.id, {
-        type: 'ERP_FLEX_COLLECT_ORDER',
+        type: "ERP_FLEX_COLLECT_ORDER",
         filters: state.activeFilters,
       });
     } catch (reinjectedError) {
@@ -264,7 +271,7 @@ async function requestOrderCollection(activeTab) {
   }
 }
 
-function renderFeedback(message, details = [], tone = 'neutral') {
+function renderFeedback(message, details = [], tone = "neutral") {
   statusMessage.textContent = message;
   setFeedbackTone(tone);
 
@@ -275,8 +282,8 @@ function renderFeedback(message, details = [], tone = 'neutral') {
   }
 
   const nodes = details.map((detail) => {
-    const row = document.createElement('p');
-    row.className = 'feedback-detail';
+    const row = document.createElement("p");
+    row.className = "feedback-detail";
     row.textContent = detail;
     return row;
   });
@@ -290,7 +297,7 @@ function bindClick(element, handler) {
     return;
   }
 
-  element.addEventListener('click', handler);
+  element.addEventListener("click", handler);
 }
 
 function bindChange(element, handler) {
@@ -298,7 +305,23 @@ function bindChange(element, handler) {
     return;
   }
 
-  element.addEventListener('change', handler);
+  element.addEventListener("change", handler);
+}
+
+function setElementDisabled(element, isDisabled) {
+  if (!element) {
+    return;
+  }
+
+  element.disabled = isDisabled;
+}
+
+function setElementText(element, text) {
+  if (!element) {
+    return;
+  }
+
+  element.textContent = text;
 }
 
 function setMappingState(tone, message) {
@@ -310,31 +333,36 @@ function renderSession(settings) {
   return settings;
 }
 
-function setBusy(isBusy, busyLabel = 'Criando OP no Kanban...') {
-  importButton.disabled = isBusy || !state.currentPayload;
-  reviewButton.disabled = isBusy;
-  loadPreviewButton.disabled = isBusy;
-  openAdvancedSettingsButton.disabled = isBusy;
-  issueDateFromInput.disabled = isBusy;
-  issueDateToInput.disabled = isBusy;
-  orderSelectorTrigger.disabled = isBusy || state.currentPayloadOptions.length <= 1;
-  importButton.textContent = isBusy ? busyLabel : 'Criar OP no Kanban';
-  reviewButton.textContent = isBusy ? 'Aguarde...' : 'Revisar dados';
+function setBusy(isBusy, busyLabel = "Criando OP no Kanban...") {
+  setElementDisabled(importButton, isBusy || !state.currentPayload);
+  setElementDisabled(reviewButton, isBusy);
+  setElementDisabled(loadPreviewButton, isBusy);
+  setElementDisabled(openAdvancedSettingsButton, isBusy);
+  setElementDisabled(issueDateFromInput, isBusy);
+  setElementDisabled(issueDateToInput, isBusy);
+  setElementDisabled(
+    orderSelectorTrigger,
+    isBusy || state.currentPayloadOptions.length <= 1,
+  );
+  setElementText(importButton, isBusy ? busyLabel : "Criar OP no Kanban");
+  setElementText(reviewButton, isBusy ? "Analisando ERP..." : "Fazer análise");
 }
 
 function setOrderPickerOpen(isOpen) {
-  const canOpen = state.currentPayloadOptions.length > 1 && !orderSelectorTrigger.disabled;
+  const canOpen =
+    state.currentPayloadOptions.length > 1 && !orderSelectorTrigger.disabled;
   const nextState = canOpen ? isOpen : false;
 
   state.isOrderPickerOpen = nextState;
   orderSelectorPanel.hidden = !nextState;
-  orderSelectorTrigger.setAttribute('aria-expanded', String(nextState));
+  orderSelectorTrigger.setAttribute("aria-expanded", String(nextState));
 }
 
 function syncDateFilters(filters = {}) {
   const fallbackRange = getCurrentMonthDateRange();
   state.activeFilters.issueDateFrom =
-    normalizeDateInputValue(filters.issueDateFrom) || fallbackRange.issueDateFrom;
+    normalizeDateInputValue(filters.issueDateFrom) ||
+    fallbackRange.issueDateFrom;
   state.activeFilters.issueDateTo =
     normalizeDateInputValue(filters.issueDateTo) || fallbackRange.issueDateTo;
   issueDateFromInput.value = state.activeFilters.issueDateFrom;
@@ -350,7 +378,7 @@ function buildDerivedSnapshot(payload) {
     normalizeText(candidates.baseProduct) ||
     normalizeText(candidates.productBase) ||
     normalizeText(payload?.item?.productCode) ||
-    '';
+    "";
   const color = normalizeText(candidates.color);
   const size = normalizeText(candidates.size);
   const explicitVariations = normalizeText(candidates.variations);
@@ -365,7 +393,9 @@ function buildDerivedSnapshot(payload) {
   }
 
   return {
-    orderNumber: normalizeText(payload?.orderNumber || payload?.externalOrderId),
+    orderNumber: normalizeText(
+      payload?.orderNumber || payload?.externalOrderId,
+    ),
     productErp: rawProductDescription,
     productCode:
       normalizeText(candidates.productCode) ||
@@ -373,7 +403,9 @@ function buildDerivedSnapshot(payload) {
     customerName: normalizeText(candidates.customerName),
     productBase: baseProduct,
     variations:
-      explicitVariations || variationPieces.join(' | ') || normalizeText(payload?.notes),
+      explicitVariations ||
+      variationPieces.join(" | ") ||
+      normalizeText(payload?.notes),
     quantity: payload?.item?.quantity,
     unit: payload?.item?.unit,
     dueDate: payload?.dueDate,
@@ -385,42 +417,46 @@ function buildDerivedSnapshot(payload) {
 
 function buildOrderOptionLabel(payload) {
   const snapshot = buildDerivedSnapshot(payload);
-  const primaryId = snapshot.orderNumber || normalizeText(payload?.externalOrderId) || 'OP';
-  const code = snapshot.productCode || 'Codigo nao informado';
+  const primaryId =
+    snapshot.orderNumber || normalizeText(payload?.externalOrderId) || "OP";
+  const code = snapshot.productCode || "Código não informado";
   const variations = snapshot.variations || snapshot.productErp;
 
-  return [primaryId, code, variations].filter(Boolean).join(' | ');
+  return [primaryId, code, variations].filter(Boolean).join(" | ");
 }
 
 function renderOrderOptions(payloadOptions, selectedPayload) {
-  state.currentPayloadOptions = Array.isArray(payloadOptions) ? payloadOptions : [];
+  state.currentPayloadOptions = Array.isArray(payloadOptions)
+    ? payloadOptions
+    : [];
   setOrderPickerOpen(false);
 
   if (state.currentPayloadOptions.length <= 1) {
     orderSelectorSection.hidden = true;
     orderSelectorList.replaceChildren();
-    orderSelectorCount.textContent = '1 OP';
-    orderSelectorTrigger.textContent = buildOrderOptionLabel(selectedPayload) || 'Selecionar ordem';
+    orderSelectorCount.textContent = "1 OP";
+    orderSelectorTrigger.textContent =
+      buildOrderOptionLabel(selectedPayload) || "Selecionar ordem";
     orderSelectorTrigger.disabled = true;
     return;
   }
 
   const selectedKey = buildPayloadSelectionKey(selectedPayload);
   const optionNodes = state.currentPayloadOptions.map((payload) => {
-    const option = document.createElement('button');
+    const option = document.createElement("button");
     const optionKey = buildPayloadSelectionKey(payload);
-    option.type = 'button';
-    option.className = 'order-picker__option';
-    option.setAttribute('role', 'option');
+    option.type = "button";
+    option.className = "order-picker__option";
+    option.setAttribute("role", "option");
     option.dataset.selectionKey = optionKey;
-    option.setAttribute('aria-selected', String(optionKey === selectedKey));
+    option.setAttribute("aria-selected", String(optionKey === selectedKey));
     option.textContent = buildOrderOptionLabel(payload);
 
     if (optionKey === selectedKey) {
-      option.classList.add('order-picker__option--selected');
+      option.classList.add("order-picker__option--selected");
     }
 
-    option.addEventListener('click', () => {
+    option.addEventListener("click", () => {
       selectOrderPayloadByKey(optionKey);
     });
 
@@ -429,7 +465,7 @@ function renderOrderOptions(payloadOptions, selectedPayload) {
 
   orderSelectorList.replaceChildren(...optionNodes);
   orderSelectorTrigger.textContent =
-    buildOrderOptionLabel(selectedPayload) || 'Selecionar ordem';
+    buildOrderOptionLabel(selectedPayload) || "Selecionar ordem";
   orderSelectorCount.textContent = `${state.currentPayloadOptions.length} OPs`;
   orderSelectorTrigger.disabled = false;
   orderSelectorSection.hidden = false;
@@ -438,72 +474,93 @@ function renderOrderOptions(payloadOptions, selectedPayload) {
 function renderCapturedData(payload) {
   const snapshot = buildDerivedSnapshot(payload);
 
-  captureOrderNumber.textContent = formatFallback(snapshot.orderNumber, 'Nao capturada');
-  captureProductErp.textContent = formatFallback(snapshot.productErp, 'Nao capturado');
-  captureProductCode.textContent = formatFallback(snapshot.productCode, 'Nao capturado');
-  captureCustomerName.textContent = formatFallback(snapshot.customerName, 'Nao capturado');
-  captureProductBase.textContent = formatFallback(snapshot.productBase, 'Nao identificado');
+  captureProductErp.textContent = formatFallback(
+    snapshot.productErp,
+    "Não capturado",
+  );
+  captureOrderNumber.textContent = formatFallback(
+    snapshot.orderNumber,
+    "Não capturada",
+  );
+  captureProductCode.textContent = formatFallback(
+    snapshot.productCode,
+    "Não capturado",
+  );
+  captureCustomerName.textContent = formatFallback(
+    snapshot.customerName,
+    "Não capturado",
+  );
+  captureProductBase.textContent = formatFallback(
+    snapshot.productBase,
+    "Não identificado",
+  );
   captureVariations.textContent = formatFallback(
     snapshot.variations,
-    'Nao identificadas',
+    "Não identificadas",
   );
-  captureQuantity.textContent = formatQuantity(snapshot.quantity, snapshot.unit);
+  captureQuantity.textContent = formatQuantity(
+    snapshot.quantity,
+    snapshot.unit,
+  );
   captureDueDate.textContent = formatDate(snapshot.dueDate);
 
   if (snapshot.hasVariationMapping) {
-    setMappingState('success', 'Variacao encontrada');
+    setMappingState("success", "Variação encontrada");
   } else if (snapshot.productErp) {
-    setMappingState('warning', 'Mapeamento parcial');
+    setMappingState("warning", "Mapeamento parcial");
   } else {
-    setMappingState('neutral', 'Aguardando leitura da pagina');
+    setMappingState("neutral", "Aguardando leitura da página");
   }
 }
 
 function clearCapturedData() {
   state.currentPayloadOptions = [];
-  captureOrderNumber.textContent = 'Nao capturada';
-  captureProductErp.textContent = 'Nao capturado';
-  captureProductCode.textContent = 'Nao capturado';
-  captureCustomerName.textContent = 'Nao capturado';
-  captureProductBase.textContent = 'Nao identificado';
-  captureVariations.textContent = 'Nao identificadas';
-  captureQuantity.textContent = 'Nao capturada';
-  captureDueDate.textContent = 'Nao capturado';
+  captureOrderNumber.textContent = "Não capturada";
+  captureProductErp.textContent = "Não capturado";
+  captureProductCode.textContent = "Não capturado";
+  captureCustomerName.textContent = "Não capturado";
+  captureProductBase.textContent = "Não identificado";
+  captureVariations.textContent = "Não identificadas";
+  captureQuantity.textContent = "Não capturada";
+  captureDueDate.textContent = "Não capturado";
   orderSelectorSection.hidden = true;
   orderSelectorList.replaceChildren();
-  orderSelectorCount.textContent = '0 OPs';
-  orderSelectorTrigger.textContent = 'Selecionar ordem';
+  orderSelectorCount.textContent = "0 OPs";
+  orderSelectorTrigger.textContent = "Selecionar ordem";
   orderSelectorTrigger.disabled = true;
   setOrderPickerOpen(false);
-  setMappingState('neutral', 'Aguardando leitura da pagina');
+  setMappingState("neutral", "Aguardando leitura da página");
 }
 
 function loadMockPreview() {
   state.currentPayloadOptions = structuredClone(MOCK_PREVIEW_OPTIONS);
   state.currentPayload = state.currentPayloadOptions[0];
   syncDateFilters({
-    issueDateFrom: '2026-06-01',
-    issueDateTo: '2026-06-30',
+    issueDateFrom: "2026-06-01",
+    issueDateTo: "2026-06-30",
   });
   renderOrderOptions(state.currentPayloadOptions, state.currentPayload);
   renderCapturedData(state.currentPayload);
   importButton.disabled = false;
   renderFeedback(
-    'Preview visual carregado com dados mockados para revisar a popup.',
+    "Preview visual carregado com dados mockados para revisar a popup.",
     [
-      formatDetailLabel('Modo', 'Preview visual local'),
-      formatDetailLabel('Estrategia de captura', 'preview-mock'),
+      formatDetailLabel("Modo", "Preview visual local"),
+      formatDetailLabel("Estratégia de captura", "preview-mock"),
       formatDetailLabel(
-        'Periodo',
+        "Periodo",
         formatPeriodLabel(
           state.activeFilters.issueDateFrom,
           state.activeFilters.issueDateTo,
         ),
       ),
-      formatDetailLabel('Ordens encontradas', String(state.currentPayloadOptions.length)),
-      formatDetailLabel('Pagina', MOCK_PREVIEW_PAYLOAD.sourcePageUrl),
+      formatDetailLabel(
+        "Ordens encontradas",
+        String(state.currentPayloadOptions.length),
+      ),
+      formatDetailLabel("Pagina", MOCK_PREVIEW_PAYLOAD.sourcePageUrl),
     ],
-    'success',
+    "success",
   );
 }
 
@@ -514,23 +571,25 @@ async function handleReviewData() {
     state.activeFilters.issueDateFrom > state.activeFilters.issueDateTo
   ) {
     renderFeedback(
-      'O periodo informado esta invalido.',
+      "O período informado está inválido.",
       [
         formatDetailLabel(
-          'Periodo',
+          "Periodo",
           formatPeriodLabel(
             state.activeFilters.issueDateFrom,
             state.activeFilters.issueDateTo,
           ),
         ),
       ],
-      'error',
+      "error",
     );
     return;
   }
 
-  setBusy(true, 'Criar OP no Kanban...');
-  renderFeedback('Lendo novamente a pagina do ERP Flex...');
+  setBusy(true, "Criando OP no Kanban...");
+  renderFeedback(
+    "Analisando a página atual do ERP Flex para buscar as Ordens de Produção...",
+  );
 
   try {
     await collectOrderPreview();
@@ -538,9 +597,11 @@ async function handleReviewData() {
     state.currentPayload = null;
     clearCapturedData();
     renderFeedback(
-      error instanceof Error ? error.message : 'Falha ao revisar os dados.',
+      error instanceof Error
+        ? error.message
+        : "Falha ao analisar os dados do ERP.",
       [],
-      'error',
+      "error",
     );
   } finally {
     setBusy(false);
@@ -549,17 +610,19 @@ async function handleReviewData() {
 
 async function loadSettings() {
   const response = await sendRuntimeMessage({
-    type: 'ERP_FLEX_GET_SETTINGS',
+    type: "ERP_FLEX_GET_SETTINGS",
   });
 
   if (!response?.ok) {
-    throw new Error(response?.message ?? 'Falha ao carregar configuracoes da extensao.');
+    throw new Error(
+      response?.message ?? "Falha ao carregar configurações da extensão.",
+    );
   }
 
   renderSession(response.settings);
 
   if (response.settings.lastImportSummary) {
-    renderFeedback(response.settings.lastImportSummary, [], 'success');
+    renderFeedback(response.settings.lastImportSummary, [], "success");
   }
 
   return response.settings;
@@ -577,7 +640,9 @@ async function collectOrderPreview() {
   const activeTab = tabs[0];
 
   if (!activeTab?.id) {
-    throw new Error('Nao foi possivel identificar a aba ativa para coletar a ordem.');
+    throw new Error(
+      "Não foi possível identificar a aba ativa para coletar a ordem.",
+    );
   }
 
   const response = await requestOrderCollection(activeTab);
@@ -594,18 +659,21 @@ async function collectOrderPreview() {
 
     const details = [];
 
-    if (Array.isArray(response?.missingFields) && response.missingFields.length > 0) {
+    if (
+      Array.isArray(response?.missingFields) &&
+      response.missingFields.length > 0
+    ) {
       details.push(
         formatDetailLabel(
-          'Campos faltantes',
-          response.missingFields.join(', '),
+          "Campos faltantes",
+          response.missingFields.join(", "),
         ),
       );
     }
 
     if (response?.extractionMeta?.sourcePageUrl) {
       details.push(
-        formatDetailLabel('Pagina', response.extractionMeta.sourcePageUrl),
+        formatDetailLabel("Pagina", response.extractionMeta.sourcePageUrl),
       );
     }
 
@@ -613,7 +681,7 @@ async function collectOrderPreview() {
       syncDateFilters(response.extractionMeta.activeFilters);
       details.push(
         formatDetailLabel(
-          'Periodo',
+          "Periodo",
           formatPeriodLabel(
             response.extractionMeta.activeFilters.issueDateFrom,
             response.extractionMeta.activeFilters.issueDateTo,
@@ -622,20 +690,18 @@ async function collectOrderPreview() {
       );
     }
 
-    setMappingState('error', 'Revisar captura');
+    setMappingState("error", "Revisar captura");
     renderFeedback(
-      response?.message ?? 'A pagina atual nao retornou dados validos.',
+      response?.message ?? "A página atual não retornou dados válidos.",
       details,
-      'error',
+      "error",
     );
 
     return null;
   }
 
   const payloadOptions = Array.isArray(response.payloadOptions)
-    ? response.payloadOptions
-        .map((entry) => entry?.payload)
-        .filter(Boolean)
+    ? response.payloadOptions.map((entry) => entry?.payload).filter(Boolean)
     : [response.payload];
 
   state.currentPayloadOptions = payloadOptions;
@@ -650,17 +716,17 @@ async function collectOrderPreview() {
 
   if (snapshot.extractionStrategy) {
     details.push(
-      formatDetailLabel('Estrategia de captura', snapshot.extractionStrategy),
+      formatDetailLabel("Estrategia de captura", snapshot.extractionStrategy),
     );
   }
 
   if (snapshot.sourcePageUrl) {
-    details.push(formatDetailLabel('Pagina', snapshot.sourcePageUrl));
+    details.push(formatDetailLabel("Página", snapshot.sourcePageUrl));
   }
 
   details.push(
     formatDetailLabel(
-      'Periodo',
+      "Período",
       formatPeriodLabel(
         state.activeFilters.issueDateFrom,
         state.activeFilters.issueDateTo,
@@ -669,88 +735,95 @@ async function collectOrderPreview() {
   );
 
   if (payloadOptions.length > 1) {
-    details.push(formatDetailLabel('Ordens encontradas', String(payloadOptions.length)));
+    details.push(
+      formatDetailLabel("Ordens encontradas", String(payloadOptions.length)),
+    );
   }
 
   renderFeedback(
-    'Dados da ordem conferidos. Revise e siga para a criacao no kanban.',
+    "Análise concluída. Revise a OP encontrada e siga para a criação no kanban.",
     details,
-    'success',
+    "success",
   );
 
   return response.payload;
 }
 
 function buildImportFeedback(result) {
-  if (result.result === 'duplicate') {
+  if (result.result === "duplicate") {
     return {
-      message: 'A ordem do ERP ja existe no kanban.',
+      message: "A ordem do ERP já existe no kanban.",
       details: [
         formatDetailLabel(
-          'OP existente',
-          result.existingProductionOrderId ?? 'Nao informado',
+          "OP existente",
+          result.existingProductionOrderId ?? "Não informado",
         ),
         formatDetailLabel(
-          'Id externo ERP',
-          result.externalOrderId ?? 'Nao informado',
+          "Id externo ERP",
+          result.externalOrderId ?? "Não informado",
         ),
       ],
-      tone: 'error',
+      tone: "error",
     };
   }
 
   return {
-    message: `OP ${result.productionOrder?.orderNumber ?? ''} criada no kanban com sucesso.`,
+    message: `OP ${result.productionOrder?.orderNumber ?? ""} criada no kanban com sucesso.`,
     details: [
       formatDetailLabel(
-        'Id da ordem',
-        result.productionOrder?.id ?? 'Nao informado',
+        "Id da ordem",
+        result.productionOrder?.id ?? "Não informado",
       ),
       formatDetailLabel(
-        'Id externo ERP',
-        result.productionOrder?.source?.externalOrderId ?? 'Nao informado',
+        "Id externo ERP",
+        result.productionOrder?.source?.externalOrderId ?? "Não informado",
       ),
       formatDetailLabel(
-        'Status inicial',
-        result.productionOrder?.status ?? 'Nao informado',
+        "Status inicial",
+        result.productionOrder?.status ?? "Não informado",
       ),
     ],
-    tone: 'success',
+    tone: "success",
   };
 }
 
 async function handleImport() {
   if (!state.currentPayload) {
     renderFeedback(
-      'Revise a pagina atual antes de criar a OP no kanban.',
+      "Faça a análise da página atual antes de criar a OP no kanban.",
       [],
-      'error',
+      "error",
     );
     return;
   }
 
   setBusy(true);
-  renderFeedback('Validando configuracao e enviando a OP para o kanban...');
+  renderFeedback("Validando configurações e enviando a OP para o kanban...");
 
   try {
     const settings = await saveBaseSettings();
-    if (!normalizeText(settings.apiBaseUrl) || !normalizeText(settings.userEmail)) {
+    if (
+      !normalizeText(settings.apiBaseUrl) ||
+      !normalizeText(settings.userEmail)
+    ) {
       throw new Error(
-        'Abra Configuracao avancada e informe a API e o e-mail do sistema antes de importar.',
+        "Abra Configuração avançada e informe a API e o e-mail do sistema antes de importar.",
       );
     }
 
     const importResponse = await sendRuntimeMessage({
-      type: 'ERP_FLEX_IMPORT_ORDER',
+      type: "ERP_FLEX_IMPORT_ORDER",
       apiBaseUrl: settings.apiBaseUrl,
       userEmail: settings.userEmail,
-      userPassword: '',
+      userPassword: "",
       accessToken: settings.accessToken,
       payload: state.currentPayload,
     });
 
     if (!importResponse?.ok) {
-      throw new Error(importResponse?.message ?? 'Falha na importacao da ordem.');
+      throw new Error(
+        importResponse?.message ?? "Falha na importação da ordem.",
+      );
     }
 
     const feedback = buildImportFeedback(importResponse);
@@ -759,9 +832,11 @@ async function handleImport() {
     await loadSettings();
   } catch (error) {
     renderFeedback(
-      error instanceof Error ? error.message : 'Erro inesperado durante a importacao.',
+      error instanceof Error
+        ? error.message
+        : "Erro inesperado durante a importação.",
       [],
-      'error',
+      "error",
     );
   } finally {
     setBusy(false);
@@ -779,9 +854,9 @@ async function bootstrapPopup() {
     clearCapturedData();
     setBusy(false);
     renderFeedback(
-      error instanceof Error ? error.message : 'Falha ao iniciar a extensao.',
+      error instanceof Error ? error.message : "Falha ao iniciar a extensão.",
       [],
-      'error',
+      "error",
     );
   }
 }
@@ -804,17 +879,17 @@ function selectOrderPayloadByKey(selectionKey) {
 
   if (snapshot.extractionStrategy) {
     details.push(
-      formatDetailLabel('Estrategia de captura', snapshot.extractionStrategy),
+      formatDetailLabel("Estratégia de captura", snapshot.extractionStrategy),
     );
   }
 
   if (snapshot.sourcePageUrl) {
-    details.push(formatDetailLabel('Pagina', snapshot.sourcePageUrl));
+    details.push(formatDetailLabel("Página", snapshot.sourcePageUrl));
   }
 
   details.push(
     formatDetailLabel(
-      'Periodo',
+      "Período",
       formatPeriodLabel(
         state.activeFilters.issueDateFrom,
         state.activeFilters.issueDateTo,
@@ -824,14 +899,17 @@ function selectOrderPayloadByKey(selectionKey) {
 
   if (state.currentPayloadOptions.length > 1) {
     details.push(
-      formatDetailLabel('Ordens encontradas', String(state.currentPayloadOptions.length)),
+      formatDetailLabel(
+        "Ordens encontradas",
+        String(state.currentPayloadOptions.length),
+      ),
     );
   }
 
   renderFeedback(
-    'OP selecionada. Revise os dados e siga para a criacao no kanban.',
+    "OP selecionada a partir da análise. Revise os dados e siga para a criação no kanban.",
     details,
-    'success',
+    "success",
   );
   setBusy(false);
   setOrderPickerOpen(false);
@@ -843,18 +921,22 @@ bindClick(orderSelectorTrigger, () => {
   setOrderPickerOpen(!state.isOrderPickerOpen);
 });
 
-document.addEventListener('click', (event) => {
+document.addEventListener("click", (event) => {
   if (orderSelectorSection && !orderSelectorSection.contains(event.target)) {
     setOrderPickerOpen(false);
   }
 });
 
 bindChange(issueDateFromInput, () => {
-  state.activeFilters.issueDateFrom = normalizeDateInputValue(issueDateFromInput.value);
+  state.activeFilters.issueDateFrom = normalizeDateInputValue(
+    issueDateFromInput.value,
+  );
 });
 
 bindChange(issueDateToInput, () => {
-  state.activeFilters.issueDateTo = normalizeDateInputValue(issueDateToInput.value);
+  state.activeFilters.issueDateTo = normalizeDateInputValue(
+    issueDateToInput.value,
+  );
 });
 
 bindClick(reviewButton, () => {
@@ -870,7 +952,7 @@ bindClick(loadPreviewButton, () => {
 });
 
 bindClick(openAdvancedSettingsButton, () => {
-  window.location.href = 'advanced-settings.html';
+  window.location.href = "advanced-settings.html";
 });
 
 void bootstrapPopup();

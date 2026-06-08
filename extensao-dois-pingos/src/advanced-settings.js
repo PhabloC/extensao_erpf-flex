@@ -1,40 +1,40 @@
-const apiBaseUrlInput = document.getElementById('api-base-url');
-const userEmailInput = document.getElementById('user-email');
-const userPasswordInput = document.getElementById('user-password');
-const sessionSummary = document.getElementById('session-summary');
-const statusMessage = document.getElementById('status-message');
-const statusDetails = document.getElementById('status-details');
-const saveSettingsButton = document.getElementById('save-settings-button');
-const authenticateButton = document.getElementById('authenticate-button');
-const clearSessionButton = document.getElementById('clear-session-button');
-const backToPopupButton = document.getElementById('back-to-popup-button');
+const apiBaseUrlInput = document.getElementById("api-base-url");
+const userEmailInput = document.getElementById("user-email");
+const userPasswordInput = document.getElementById("user-password");
+const sessionSummary = document.getElementById("session-summary");
+const statusMessage = document.getElementById("status-message");
+const statusDetails = document.getElementById("status-details");
+const saveSettingsButton = document.getElementById("save-settings-button");
+const authenticateButton = document.getElementById("authenticate-button");
+const clearSessionButton = document.getElementById("clear-session-button");
+const backToPopupButton = document.getElementById("back-to-popup-button");
 
 function sendRuntimeMessage(message) {
   return chrome.runtime.sendMessage(message);
 }
 
 function normalizeText(value) {
-  return String(value ?? '')
-    .replace(/\s+/g, ' ')
+  return String(value ?? "")
+    .replace(/\s+/g, " ")
     .trim();
 }
 
 function setFeedbackTone(tone) {
   statusMessage.classList.remove(
-    'feedback-message--error',
-    'feedback-message--success',
+    "feedback-message--error",
+    "feedback-message--success",
   );
 
-  if (tone === 'error') {
-    statusMessage.classList.add('feedback-message--error');
+  if (tone === "error") {
+    statusMessage.classList.add("feedback-message--error");
   }
 
-  if (tone === 'success') {
-    statusMessage.classList.add('feedback-message--success');
+  if (tone === "success") {
+    statusMessage.classList.add("feedback-message--success");
   }
 }
 
-function renderFeedback(message, details = [], tone = 'neutral') {
+function renderFeedback(message, details = [], tone = "neutral") {
   statusMessage.textContent = message;
   setFeedbackTone(tone);
 
@@ -45,8 +45,8 @@ function renderFeedback(message, details = [], tone = 'neutral') {
   }
 
   const nodes = details.map((detail) => {
-    const row = document.createElement('p');
-    row.className = 'feedback-detail';
+    const row = document.createElement("p");
+    row.className = "feedback-detail";
     row.textContent = detail;
     return row;
   });
@@ -57,16 +57,16 @@ function renderFeedback(message, details = [], tone = 'neutral') {
 
 function renderSession(settings) {
   if (settings.accessToken) {
-    sessionSummary.textContent = `Sessao ativa para ${
-      settings.userEmail || 'usuario autenticado'
+    sessionSummary.textContent = `Sessão ativa para ${
+      settings.userEmail || "usuário autenticado"
     }.`;
     return;
   }
 
-  sessionSummary.textContent = 'Nenhuma sessao autenticada salva.';
+  sessionSummary.textContent = "Nenhuma sessão autenticada salva.";
 }
 
-function setBusy(isBusy, primaryLabel = 'Salvar configuracao') {
+function setBusy(isBusy, primaryLabel = "Salvar configuração") {
   saveSettingsButton.disabled = isBusy;
   authenticateButton.disabled = isBusy;
   clearSessionButton.disabled = isBusy;
@@ -74,47 +74,55 @@ function setBusy(isBusy, primaryLabel = 'Salvar configuracao') {
   apiBaseUrlInput.disabled = isBusy;
   userEmailInput.disabled = isBusy;
   userPasswordInput.disabled = isBusy;
-  saveSettingsButton.textContent = isBusy ? primaryLabel : 'Salvar configuracao';
+  saveSettingsButton.textContent = isBusy
+    ? primaryLabel
+    : "Salvar configuração";
 }
 
 async function loadSettings() {
   const response = await sendRuntimeMessage({
-    type: 'ERP_FLEX_GET_SETTINGS',
+    type: "ERP_FLEX_GET_SETTINGS",
   });
 
   if (!response?.ok) {
-    throw new Error(response?.message ?? 'Falha ao carregar configuracoes da extensao.');
+    throw new Error(
+      response?.message ?? "Falha ao carregar configurações da extensão.",
+    );
   }
 
-  apiBaseUrlInput.value = response.settings.apiBaseUrl ?? '';
-  userEmailInput.value = response.settings.userEmail ?? '';
+  apiBaseUrlInput.value = response.settings.apiBaseUrl ?? "";
+  userEmailInput.value = response.settings.userEmail ?? "";
   renderSession(response.settings);
 
   return response.settings;
 }
 
 async function handleSaveSettings() {
-  setBusy(true, 'Salvando...');
-  renderFeedback('Salvando configuracoes da extensao...');
+  setBusy(true, "Salvando...");
+  renderFeedback("Salvando configurações da extensão...");
 
   try {
     const response = await sendRuntimeMessage({
-      type: 'ERP_FLEX_SAVE_SETTINGS',
+      type: "ERP_FLEX_SAVE_SETTINGS",
       apiBaseUrl: apiBaseUrlInput.value,
       userEmail: userEmailInput.value,
     });
 
     if (!response?.ok) {
-      throw new Error(response?.message ?? 'Falha ao salvar configuracoes da extensao.');
+      throw new Error(
+        response?.message ?? "Falha ao salvar configurações da extensão.",
+      );
     }
 
     renderSession(response.settings);
-    renderFeedback('Configuracoes salvas com sucesso.', [], 'success');
+    renderFeedback("Configurações salvas com sucesso.", [], "success");
   } catch (error) {
     renderFeedback(
-      error instanceof Error ? error.message : 'Falha ao salvar configuracoes da extensao.',
+      error instanceof Error
+        ? error.message
+        : "Falha ao salvar configurações da extensão.",
       [],
-      'error',
+      "error",
     );
   } finally {
     setBusy(false);
@@ -122,29 +130,29 @@ async function handleSaveSettings() {
 }
 
 async function handleAuthenticate() {
-  setBusy(true, 'Autenticando...');
-  renderFeedback('Renovando sessao no sistema destino...');
+  setBusy(true, "Autenticando...");
+  renderFeedback("Renovando sessão no sistema destino...");
 
   try {
     const response = await sendRuntimeMessage({
-      type: 'ERP_FLEX_AUTHENTICATE',
+      type: "ERP_FLEX_AUTHENTICATE",
       apiBaseUrl: apiBaseUrlInput.value,
       userEmail: userEmailInput.value,
       userPassword: userPasswordInput.value,
     });
 
     if (!response?.ok) {
-      throw new Error(response?.message ?? 'Falha ao autenticar na API.');
+      throw new Error(response?.message ?? "Falha ao autenticar na API.");
     }
 
-    userPasswordInput.value = '';
+    userPasswordInput.value = "";
     renderSession(response.settings);
-    renderFeedback('Sessao renovada com sucesso.', [], 'success');
+    renderFeedback("Sessão renovada com sucesso.", [], "success");
   } catch (error) {
     renderFeedback(
-      error instanceof Error ? error.message : 'Falha ao autenticar na API.',
+      error instanceof Error ? error.message : "Falha ao autenticar na API.",
       [],
-      'error',
+      "error",
     );
   } finally {
     setBusy(false);
@@ -152,30 +160,34 @@ async function handleAuthenticate() {
 }
 
 async function handleClearSession() {
-  setBusy(true, 'Limpando...');
-  renderFeedback('Limpando sessao local da extensao...');
+  setBusy(true, "Limpando...");
+  renderFeedback("Limpando sessão local da extensão...");
 
   try {
     const response = await sendRuntimeMessage({
-      type: 'ERP_FLEX_CLEAR_SESSION',
+      type: "ERP_FLEX_CLEAR_SESSION",
     });
 
     if (!response?.ok) {
-      throw new Error(response?.message ?? 'Falha ao limpar a sessao da extensao.');
+      throw new Error(
+        response?.message ?? "Falha ao limpar a sessão da extensão.",
+      );
     }
 
-    userPasswordInput.value = '';
+    userPasswordInput.value = "";
     renderSession(response.settings);
     renderFeedback(
-      'Sessao local removida. Informe a senha novamente para renovar o token.',
+      "Sessão local removida. Informe a senha novamente para renovar o token.",
       [],
-      'success',
+      "success",
     );
   } catch (error) {
     renderFeedback(
-      error instanceof Error ? error.message : 'Falha ao limpar a sessao da extensao.',
+      error instanceof Error
+        ? error.message
+        : "Falha ao limpar a sessão da extensão.",
       [],
-      'error',
+      "error",
     );
   } finally {
     setBusy(false);
@@ -183,7 +195,7 @@ async function handleClearSession() {
 }
 
 function goBackToPopup() {
-  window.location.href = 'popup.html';
+  window.location.href = "popup.html";
 }
 
 async function bootstrapAdvancedSettings() {
@@ -193,26 +205,28 @@ async function bootstrapAdvancedSettings() {
   } catch (error) {
     setBusy(false);
     renderFeedback(
-      error instanceof Error ? error.message : 'Falha ao iniciar configuracao avancada.',
+      error instanceof Error
+        ? error.message
+        : "Falha ao iniciar configuração avançada.",
       [],
-      'error',
+      "error",
     );
   }
 }
 
-saveSettingsButton.addEventListener('click', () => {
+saveSettingsButton.addEventListener("click", () => {
   void handleSaveSettings();
 });
 
-authenticateButton.addEventListener('click', () => {
+authenticateButton.addEventListener("click", () => {
   void handleAuthenticate();
 });
 
-clearSessionButton.addEventListener('click', () => {
+clearSessionButton.addEventListener("click", () => {
   void handleClearSession();
 });
 
-backToPopupButton.addEventListener('click', () => {
+backToPopupButton.addEventListener("click", () => {
   goBackToPopup();
 });
 
