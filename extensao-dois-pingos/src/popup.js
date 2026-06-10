@@ -22,6 +22,7 @@ const captureProductBase = document.getElementById("capture-product-base");
 const captureVariations = document.getElementById("capture-variations");
 const captureQuantity = document.getElementById("capture-quantity");
 const captureDueDate = document.getElementById("capture-due-date");
+const captureNotes = document.getElementById("capture-notes");
 
 const state = {
   currentPayload: null,
@@ -73,7 +74,7 @@ const MOCK_PREVIEW_OPTIONS = [
       unit: "UN",
     },
     dueDate: "2026-06-19",
-    notes: "SILK MINIKAY | COSTURA DP",
+    notes: "SILK MINIKAY, COSTURA DP",
     sourcePageUrl:
       "https://app.erpflex.com.br/erp/lancamentos/producao/ordensproducao",
     rawPayload: {
@@ -88,6 +89,7 @@ const MOCK_PREVIEW_OPTIONS = [
           "Ombrelone Redondo 2,40m; armacao/vareta Aluminio, tecido Poliester PVC SLIM-Personalizado",
         baseProduct: "10AC7524P",
         variations: "Azul Guanabara C/Abas",
+        complementaryFields: "SILK MINIKAY, COSTURA DP",
         quantity: 4,
         dueDate: "19/06/2026",
       },
@@ -405,6 +407,9 @@ function buildDerivedSnapshot(payload) {
     variations:
       explicitVariations ||
       variationPieces.join(" | ") ||
+      "",
+    notes:
+      normalizeText(candidates.complementaryFields) ||
       normalizeText(payload?.notes),
     quantity: payload?.item?.quantity,
     unit: payload?.item?.unit,
@@ -503,6 +508,7 @@ function renderCapturedData(payload) {
     snapshot.unit,
   );
   captureDueDate.textContent = formatDate(snapshot.dueDate);
+  captureNotes.textContent = formatFallback(snapshot.notes, "Não capturadas");
 
   if (snapshot.hasVariationMapping) {
     setMappingState("success", "Variação encontrada");
@@ -523,6 +529,7 @@ function clearCapturedData() {
   captureVariations.textContent = "Não identificadas";
   captureQuantity.textContent = "Não capturada";
   captureDueDate.textContent = "Não capturado";
+  captureNotes.textContent = "Não capturadas";
   orderSelectorSection.hidden = true;
   orderSelectorList.replaceChildren();
   orderSelectorCount.textContent = "0 OPs";

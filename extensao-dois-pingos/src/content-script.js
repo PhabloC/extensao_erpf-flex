@@ -557,20 +557,30 @@
     return null;
   }
 
-  function normalizeStructuredOrder(record) {
+  function buildSc2ComplementaryFieldsLine(record) {
     if (!record || typeof record !== 'object') {
-      return null;
+      return '';
     }
 
-    const notes = [];
+    const values = [];
 
     for (let index = 1; index <= 30; index += 1) {
       const fieldValue = normalizeText(record[`SC2_Campo${index}`]);
 
       if (fieldValue) {
-        notes.push(fieldValue);
+        values.push(fieldValue);
       }
     }
+
+    return values.join(', ');
+  }
+
+  function normalizeStructuredOrder(record) {
+    if (!record || typeof record !== 'object') {
+      return null;
+    }
+
+    const complementaryFields = buildSc2ComplementaryFieldsLine(record);
 
     const item = {
       productCode: normalizeText(record.SB1_Codigo),
@@ -587,7 +597,7 @@
       item,
       issueDate: parseDateValue(record.SC2_Emissao) || undefined,
       dueDate: parseDateValue(record.SC2_Previsao) || undefined,
-      notes: notes.join(' | ') || undefined,
+      notes: complementaryFields || undefined,
       sourcePageUrl: window.location.href,
       rawPayload: {
         extractionStrategy: 'endpoint+dom',
@@ -613,6 +623,7 @@
           customerName:
             normalizeText(record.SA1_Desc) ||
             normalizeText(record.SA1_Fantasia),
+          complementaryFields: complementaryFields || undefined,
         },
         erpRecord: record,
       },
