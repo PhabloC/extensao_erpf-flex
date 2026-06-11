@@ -24,12 +24,36 @@ const captureQuantity = document.getElementById("capture-quantity");
 const captureUnit = document.getElementById("capture-unit");
 const captureDueDate = document.getElementById("capture-due-date");
 const captureNotes = document.getElementById("capture-notes");
+const importConfirmationPanel = document.getElementById(
+  "import-confirmation-panel",
+);
+const cancelConfirmationButton = document.getElementById(
+  "cancel-confirmation-button",
+);
+const dismissConfirmationButton = document.getElementById(
+  "dismiss-confirmation-button",
+);
+const confirmImportButton = document.getElementById("confirm-import-button");
+const confirmOrderNumber = document.getElementById("confirm-order-number");
+const confirmProductErp = document.getElementById("confirm-product-erp");
+const confirmProductCode = document.getElementById("confirm-product-code");
+const confirmCustomerName = document.getElementById("confirm-customer-name");
+const confirmProductBase = document.getElementById("confirm-product-base");
+const confirmVariations = document.getElementById("confirm-variations");
+const confirmQuantity = document.getElementById("confirm-quantity");
+const confirmUnit = document.getElementById("confirm-unit");
+const confirmDueDate = document.getElementById("confirm-due-date");
+const confirmNotes = document.getElementById("confirm-notes");
 
 const state = {
   currentPayload: null,
   currentPayloadOptions: [],
   activeFilters: getCurrentMonthDateRange(),
   isOrderPickerOpen: false,
+  isImportConfirmationOpen: false,
+  isSubmittingImport: false,
+  importButtonMode: "idle",
+  lastFocusedElementBeforeConfirmation: null,
 };
 
 const NO_RECEIVER_ERROR_PATTERN =
@@ -334,6 +358,25 @@ function setElementText(element, text) {
   element.textContent = text;
 }
 
+function setButtonVisualState(button, mode, labels) {
+  if (!button) {
+    return;
+  }
+
+  button.classList.remove("action-button--loading", "action-button--success");
+
+  if (mode === "loading") {
+    button.classList.add("action-button--loading");
+  }
+
+  if (mode === "success") {
+    button.classList.add("action-button--success");
+  }
+
+  button.textContent =
+    labels[mode] ?? labels.idle ?? labels.default ?? button.textContent;
+}
+
 function setMappingState(tone, message) {
   mappingStatus.textContent = message;
   mappingStatus.className = `mapping-badge mapping-badge--${tone}`;
@@ -343,19 +386,60 @@ function renderSession(settings) {
   return settings;
 }
 
-function setBusy(isBusy, busyLabel = "Criando OP no Kanban...") {
-  setElementDisabled(importButton, isBusy || !state.currentPayload);
+function updateImportActionState() {
+  const hasPayload = Boolean(state.currentPayload);
+  const hasMultipleOrders = state.currentPayloadOptions.length > 1;
+
+  setButtonVisualState(importButton, state.importButtonMode, {
+    idle: "Criar OP no Kanban",
+    loading: "Criando OP no Kanban...",
+    success: "OP criada no Kanban",
+  });
+
+  setButtonVisualState(confirmImportButton, state.importButtonMode, {
+    idle: "Confirmar e criar OP",
+    loading: "Criando OP no Kanban...",
+    success: "OP criada no Kanban",
+  });
+
+  setElementDisabled(
+    importButton,
+    !hasPayload || state.isSubmittingImport || state.isImportConfirmationOpen,
+  );
+  setElementDisabled(
+    confirmImportButton,
+    !hasPayload || state.isSubmittingImport,
+  );
+  setElementDisabled(
+    cancelConfirmationButton,
+    state.isSubmittingImport,
+  );
+  setElementDisabled(
+    dismissConfirmationButton,
+    state.isSubmittingImport,
+  );
+  setElementDisabled(
+    orderSelectorTrigger,
+    state.isSubmittingImport || hasMultipleOrders === false,
+  );
+}
+
+function setBusy(isBusy, options = {}) {
+  const {
+    importBusy = false,
+    reviewBusyLabel = "Analisando ERP...",
+    reviewIdleLabel = "Fazer análise",
+  } = options;
+
+  state.isSubmittingImport = importBusy;
+
   setElementDisabled(reviewButton, isBusy);
   setElementDisabled(loadPreviewButton, isBusy);
   setElementDisabled(openAdvancedSettingsButton, isBusy);
   setElementDisabled(issueDateFromInput, isBusy);
   setElementDisabled(issueDateToInput, isBusy);
-  setElementDisabled(
-    orderSelectorTrigger,
-    isBusy || state.currentPayloadOptions.length <= 1,
-  );
-  setElementText(importButton, isBusy ? busyLabel : "Criar OP no Kanban");
-  setElementText(reviewButton, isBusy ? "Analisando ERP..." : "Fazer análise");
+  setElementText(reviewButton, isBusy ? reviewBusyLabel : reviewIdleLabel);
+  updateImportActionState();
 }
 
 function setOrderPickerOpen(isOpen) {
@@ -377,6 +461,17 @@ function syncDateFilters(filters = {}) {
     normalizeDateInputValue(filters.issueDateTo) || fallbackRange.issueDateTo;
   issueDateFromInput.value = state.activeFilters.issueDateFrom;
   issueDateToInput.value = state.activeFilters.issueDateTo;
+}
+
+function focusFirstConfirmationAction() {
+  if (confirmImportButton && !confirmImportButton.disabled) {
+    confirmImportButton.focus();
+    return;
+  }
+
+  if (dismissConfirmationButton && !dismissConfirmationButton.disabled) {
+    dismissConfirmationButton.focus();
+  }
 }
 
 function buildDerivedSnapshot(payload) {
@@ -425,6 +520,143 @@ function buildDerivedSnapshot(payload) {
     sourcePageUrl: normalizeText(payload?.sourcePageUrl),
     extractionStrategy: normalizeText(payload?.rawPayload?.extractionStrategy),
     hasVariationMapping: Boolean(explicitVariations || variationPieces.length),
+  };
+}
+
+function renderImportConfirmation(payload) {
+  const snapshot = buildDerivedSnapshot(payload);
+
+  confirmOrderNumber.textContent = formatFallback(
+    snapshot.orderNumber,
+    "Não capturada",
+  );
+  confirmProductErp.textContent = formatFallback(
+    snapshot.productErp,
+    "Não capturado",
+  );
+  confirmProductCode.textContent = formatFallback(
+    snapshot.productCode,
+    "Não capturado",
+  );
+  confirmCustomerName.textContent = formatFallback(
+    snapshot.customerName,
+    "Não capturado",
+  );
+  confirmProductBase.textContent = formatFallback(
+    snapshot.productBase,
+    "Não identificado",
+  );
+  confirmVariations.textContent = formatFallback(
+    snapshot.variations,
+    "Não identificadas",
+  );
+  confirmQuantity.textContent = formatQuantity(snapshot.quantity);
+  confirmUnit.textContent = formatFallback(snapshot.unit, "Não capturada");
+  confirmDueDate.textContent = formatDate(snapshot.dueDate);
+  confirmNotes.textContent = formatFallback(snapshot.notes, "Não capturadas");
+}
+
+function setImportConfirmationOpen(isOpen, { restoreFocus = true } = {}) {
+  state.isImportConfirmationOpen = isOpen;
+  importConfirmationPanel.hidden = !isOpen;
+  updateImportActionState();
+
+  if (isOpen) {
+    focusFirstConfirmationAction();
+    return;
+  }
+
+  if (
+    restoreFocus &&
+    state.lastFocusedElementBeforeConfirmation instanceof HTMLElement
+  ) {
+    state.lastFocusedElementBeforeConfirmation.focus();
+  }
+}
+
+function resetImportButtonState() {
+  state.importButtonMode = "idle";
+  updateImportActionState();
+}
+
+function markImportSuccess() {
+  state.importButtonMode = "success";
+  updateImportActionState();
+}
+
+function buildSettingsMissingDetails(settings) {
+  return [
+    formatDetailLabel(
+      "API configurada",
+      normalizeText(settings.apiBaseUrl) || "Não informada",
+    ),
+    formatDetailLabel(
+      "E-mail configurado",
+      normalizeText(settings.userEmail) || "Não informado",
+    ),
+    'Abra a engrenagem para preencher os dados da API do sistema destino.',
+  ];
+}
+
+function normalizeFeedbackDetails(details) {
+  if (!Array.isArray(details)) {
+    return [];
+  }
+
+  return details
+    .map((detail) => normalizeText(detail))
+    .filter(Boolean);
+}
+
+function buildImportErrorFeedback(errorLike, settings = {}) {
+  const message = normalizeText(errorLike?.message || errorLike);
+  const normalizedMessage =
+    message || "Erro inesperado durante a importação da OP.";
+  const details = normalizeFeedbackDetails(errorLike?.details);
+
+  if (
+    !normalizeText(settings.apiBaseUrl) ||
+    !normalizeText(settings.userEmail)
+  ) {
+    return {
+      message:
+        "A criação da OP precisa da API e do e-mail configurados antes do envio.",
+      details: buildSettingsMissingDetails(settings),
+      tone: "error",
+    };
+  }
+
+  if (/sessao expirada|renovar o token/i.test(normalizedMessage)) {
+    return {
+      message: normalizedMessage,
+      details: [
+        "Abra a configuração avançada e informe a senha para renovar a sessão.",
+        ...details,
+      ],
+      tone: "error",
+    };
+  }
+
+  if (/failed to fetch|networkerror|network error/i.test(normalizedMessage)) {
+    return {
+      message:
+        "A extensão não conseguiu alcançar a API do sistema destino.",
+      details: [
+        formatDetailLabel(
+          "API configurada",
+          normalizeText(settings.apiBaseUrl) || "Não informada",
+        ),
+        "Verifique se a API está online e acessível a partir do navegador.",
+        ...details,
+      ],
+      tone: "error",
+    };
+  }
+
+  return {
+    message: normalizedMessage,
+    details,
+    tone: "error",
   };
 }
 
@@ -485,6 +717,7 @@ function renderOrderOptions(payloadOptions, selectedPayload) {
 }
 
 function renderCapturedData(payload) {
+  resetImportButtonState();
   const snapshot = buildDerivedSnapshot(payload);
 
   captureProductErp.textContent = formatFallback(
@@ -526,6 +759,8 @@ function renderCapturedData(payload) {
 }
 
 function clearCapturedData() {
+  resetImportButtonState();
+  setImportConfirmationOpen(false, { restoreFocus: false });
   state.currentPayloadOptions = [];
   captureOrderNumber.textContent = "Não capturada";
   captureProductErp.textContent = "Não capturado";
@@ -600,7 +835,9 @@ async function handleReviewData() {
     return;
   }
 
-  setBusy(true, "Criando OP no Kanban...");
+  resetImportButtonState();
+  setImportConfirmationOpen(false, { restoreFocus: false });
+  setBusy(true);
   renderFeedback(
     "Analisando a página atual do ERP Flex para buscar as Ordens de Produção...",
   );
@@ -775,7 +1012,7 @@ async function collectOrderPreview() {
 function buildImportFeedback(result) {
   if (result.result === "duplicate") {
     return {
-      message: "A ordem do ERP já existe no kanban.",
+      message: "A OP selecionada já existe no sistema destino.",
       details: [
         formatDetailLabel(
           "OP existente",
@@ -810,7 +1047,7 @@ function buildImportFeedback(result) {
   };
 }
 
-async function handleImport() {
+function openImportConfirmation() {
   if (!state.currentPayload) {
     renderFeedback(
       "Faça a análise da página atual antes de criar a OP no kanban.",
@@ -820,8 +1057,27 @@ async function handleImport() {
     return;
   }
 
-  setBusy(true);
-  renderFeedback("Validando configurações e enviando a OP para o kanban...");
+  resetImportButtonState();
+  state.lastFocusedElementBeforeConfirmation = document.activeElement;
+  renderImportConfirmation(state.currentPayload);
+  setImportConfirmationOpen(true, { restoreFocus: false });
+  renderFeedback(
+    "Confirme os dados da OP selecionada antes de enviar para o sistema destino.",
+  );
+}
+
+function closeImportConfirmation(options) {
+  setImportConfirmationOpen(false, options);
+}
+
+async function handleImportConfirmation() {
+  if (!state.currentPayload || state.isSubmittingImport) {
+    return;
+  }
+
+  state.importButtonMode = "loading";
+  setBusy(true, { importBusy: true });
+  renderFeedback("Enviando a OP confirmada para o sistema destino...");
 
   try {
     const settings = await saveBaseSettings();
@@ -829,9 +1085,11 @@ async function handleImport() {
       !normalizeText(settings.apiBaseUrl) ||
       !normalizeText(settings.userEmail)
     ) {
-      throw new Error(
-        "Abra Configuração avançada e informe a API e o e-mail do sistema antes de importar.",
-      );
+      throw {
+        message:
+          "A criação da OP precisa da API e do e-mail configurados antes do envio.",
+        details: buildSettingsMissingDetails(settings),
+      };
     }
 
     const importResponse = await sendRuntimeMessage({
@@ -844,25 +1102,34 @@ async function handleImport() {
     });
 
     if (!importResponse?.ok) {
-      throw new Error(
-        importResponse?.message ?? "Falha na importação da ordem.",
-      );
+      throw importResponse;
     }
 
     const feedback = buildImportFeedback(importResponse);
+
+    if (importResponse.result === "created") {
+      markImportSuccess();
+    } else {
+      state.importButtonMode = "idle";
+    }
+
+    closeImportConfirmation({ restoreFocus: false });
     renderFeedback(feedback.message, feedback.details, feedback.tone);
 
     await loadSettings();
   } catch (error) {
-    renderFeedback(
-      error instanceof Error
-        ? error.message
-        : "Erro inesperado durante a importação.",
-      [],
-      "error",
-    );
+    const settingsFallback =
+      error && typeof error === "object" && "apiBaseUrl" in error
+        ? error
+        : await saveBaseSettings().catch(() => ({
+            apiBaseUrl: "",
+            userEmail: "",
+          }));
+    const feedback = buildImportErrorFeedback(error, settingsFallback);
+    state.importButtonMode = "idle";
+    renderFeedback(feedback.message, feedback.details, feedback.tone);
   } finally {
-    setBusy(false);
+    setBusy(false, { importBusy: false });
   }
 }
 
@@ -896,6 +1163,7 @@ function selectOrderPayloadByKey(selectionKey) {
   state.currentPayload = selectedPayload;
   renderOrderOptions(state.currentPayloadOptions, selectedPayload);
   renderCapturedData(selectedPayload);
+  renderImportConfirmation(selectedPayload);
 
   const snapshot = buildDerivedSnapshot(selectedPayload);
   const details = [];
@@ -967,7 +1235,19 @@ bindClick(reviewButton, () => {
 });
 
 bindClick(importButton, () => {
-  void handleImport();
+  openImportConfirmation();
+});
+
+bindClick(confirmImportButton, () => {
+  void handleImportConfirmation();
+});
+
+bindClick(cancelConfirmationButton, () => {
+  closeImportConfirmation();
+});
+
+bindClick(dismissConfirmationButton, () => {
+  closeImportConfirmation();
 });
 
 bindClick(loadPreviewButton, () => {
@@ -976,6 +1256,13 @@ bindClick(loadPreviewButton, () => {
 
 bindClick(openAdvancedSettingsButton, () => {
   window.location.href = "advanced-settings.html";
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && state.isImportConfirmationOpen) {
+    event.preventDefault();
+    closeImportConfirmation();
+  }
 });
 
 void bootstrapPopup();

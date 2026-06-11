@@ -1,55 +1,55 @@
 (function bootstrapErpFlexCollector() {
   const ERP_LIST_DATA_PATH_PATTERN =
     /\/erp\/lancamentos\/producao\/ordensproducao(?:\/data)?(?:\/)?$/i;
-  const CONTENT_SCRIPT_VERSION = '2026-06-11-quantity-and-unit-layout-fix';
+  const CONTENT_SCRIPT_VERSION = "2026-06-11-quantity-and-unit-layout-fix";
 
   function normalizeText(value) {
-    return String(value ?? '')
-      .replace(/\s+/g, ' ')
+    return String(value ?? "")
+      .replace(/\s+/g, " ")
       .trim();
   }
 
   function normalizeKey(value) {
     return normalizeText(value)
       .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '');
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
   }
 
   function isMeaningfulValue(value) {
     const normalized = normalizeText(value);
 
-    return Boolean(normalized && normalized !== '-' && normalized !== '--');
+    return Boolean(normalized && normalized !== "-" && normalized !== "--");
   }
 
   function parseBrazilianNumber(rawValue) {
-    if (typeof rawValue === 'number' && Number.isFinite(rawValue)) {
+    if (typeof rawValue === "number" && Number.isFinite(rawValue)) {
       return rawValue;
     }
 
-    const normalized = normalizeText(rawValue).replace(/[^\d,.-]/g, '');
+    const normalized = normalizeText(rawValue).replace(/[^\d,.-]/g, "");
 
     if (!normalized) {
       return null;
     }
 
-    const hasComma = normalized.includes(',');
-    const hasDot = normalized.includes('.');
+    const hasComma = normalized.includes(",");
+    const hasDot = normalized.includes(".");
     let numericString = normalized;
 
     if (hasComma && hasDot) {
       const decimalSeparator =
-        normalized.lastIndexOf(',') > normalized.lastIndexOf('.') ? ',' : '.';
-      const thousandsSeparator = decimalSeparator === ',' ? '.' : ',';
+        normalized.lastIndexOf(",") > normalized.lastIndexOf(".") ? "," : ".";
+      const thousandsSeparator = decimalSeparator === "," ? "." : ",";
 
       numericString = normalized
         .split(thousandsSeparator)
-        .join('')
-        .replace(decimalSeparator, '.');
+        .join("")
+        .replace(decimalSeparator, ".");
     } else if (hasComma) {
       numericString = /^\-?\d+,\d{3}$/.test(normalized)
-        ? normalized.replace(',', '.')
-        : normalized.replace(',', '.');
+        ? normalized.replace(",", ".")
+        : normalized.replace(",", ".");
     } else if (hasDot) {
       numericString = /^\-?\d+\.\d{3}$/.test(normalized)
         ? normalized
@@ -91,17 +91,21 @@
     const normalized = parseDateValue(rawValue);
 
     if (!normalized) {
-      return '';
+      return "";
     }
 
-    const [year, month, day] = normalized.split('-');
+    const [year, month, day] = normalized.split("-");
     return `${day}/${month}/${year}`;
   }
 
   function readEmissionFiltersFromUrl() {
     const currentUrl = new URL(window.location.href);
-    const issueDateFrom = parseDateValue(currentUrl.searchParams.get('SC2_Emissao_De'));
-    const issueDateTo = parseDateValue(currentUrl.searchParams.get('SC2_Emissao_Ate'));
+    const issueDateFrom = parseDateValue(
+      currentUrl.searchParams.get("SC2_Emissao_De"),
+    );
+    const issueDateTo = parseDateValue(
+      currentUrl.searchParams.get("SC2_Emissao_Ate"),
+    );
 
     return {
       issueDateFrom,
@@ -129,10 +133,10 @@
 
   function getElementText(element) {
     if (!element) {
-      return '';
+      return "";
     }
 
-    if ('value' in element && isMeaningfulValue(element.value)) {
+    if ("value" in element && isMeaningfulValue(element.value)) {
       return normalizeText(element.value);
     }
 
@@ -161,13 +165,13 @@
       }
     }
 
-    return '';
+    return "";
   }
 
   function extractValueNearLabel(labelTerms) {
     const normalizedLabelTerms = labelTerms.map(normalizeKey);
     const candidates = document.querySelectorAll(
-      'label, th, dt, strong, b, span, div, td',
+      "label, th, dt, strong, b, span, div, td",
     );
 
     for (const candidate of candidates) {
@@ -177,7 +181,9 @@
         continue;
       }
 
-      const matches = normalizedLabelTerms.some((term) => labelText.includes(term));
+      const matches = normalizedLabelTerms.some((term) =>
+        labelText.includes(term),
+      );
 
       if (!matches) {
         continue;
@@ -203,43 +209,65 @@
       }
     }
 
-    return '';
+    return "";
   }
 
   function collectStructuredCandidates() {
     const scripts = Array.from(
-      document.querySelectorAll('script[type="application/json"], script[type="application/ld+json"]'),
+      document.querySelectorAll(
+        'script[type="application/json"], script[type="application/ld+json"]',
+      ),
     );
     const candidates = {};
     const aliasMap = {
-      externalOrderId: ['externalorderid', 'idordemproducao', 'idop', 'ordemproducaoid'],
-      orderNumber: ['ordernumber', 'numeroordem', 'numeroop', 'ordemdeproducao', 'nrordem'],
-      productCode: ['productcode', 'codigoproduto', 'codproduto', 'itemcode'],
-      productDescription: ['productdescription', 'descricaoproduto', 'produto', 'descricaoitem'],
-      baseProduct: ['baseproduct', 'produtobase', 'produtooriginal', 'produto'],
-      variations: ['variations', 'variacao', 'variacoes', 'grade', 'atributos'],
-      color: ['color', 'cor'],
-      size: ['size', 'tamanho'],
-      quantity: ['quantity', 'quantidade', 'qtd', 'qty'],
-      unit: ['unit', 'unidade', 'uom'],
-      issueDate: ['issuedate', 'dataemissao', 'emissao'],
-      dueDate: ['duedate', 'dataentrega', 'dataprazo', 'prazoproducao'],
-      customerName: ['customername', 'cliente', 'razaosocial', 'fantasia'],
-      notes: ['notes', 'observacoes', 'obs'],
+      externalOrderId: [
+        "externalorderid",
+        "idordemproducao",
+        "idop",
+        "ordemproducaoid",
+      ],
+      orderNumber: [
+        "ordernumber",
+        "numeroordem",
+        "numeroop",
+        "ordemdeproducao",
+        "nrordem",
+      ],
+      productCode: ["productcode", "codigoproduto", "codproduto", "itemcode"],
+      productDescription: [
+        "productdescription",
+        "descricaoproduto",
+        "produto",
+        "descricaoitem",
+      ],
+      baseProduct: ["baseproduct", "produtobase", "produtooriginal", "produto"],
+      variations: ["variations", "variacao", "variacoes", "grade", "atributos"],
+      color: ["color", "cor"],
+      size: ["size", "tamanho"],
+      quantity: ["quantity", "quantidade", "qtd", "qty"],
+      unit: ["unit", "unidade", "uom"],
+      issueDate: ["issuedate", "dataemissao", "emissao"],
+      dueDate: ["duedate", "dataentrega", "dataprazo", "prazoproducao"],
+      customerName: ["customername", "cliente", "razaosocial", "fantasia"],
+      notes: ["notes", "observacoes", "obs"],
     };
 
     function assignCandidate(key, value) {
-      if (!isMeaningfulValue(value) && typeof value !== 'number') {
+      if (!isMeaningfulValue(value) && typeof value !== "number") {
         return;
       }
 
-      if (candidates[key] === undefined || candidates[key] === null || candidates[key] === '') {
+      if (
+        candidates[key] === undefined ||
+        candidates[key] === null ||
+        candidates[key] === ""
+      ) {
         candidates[key] = value;
       }
     }
 
     function inspectNode(node) {
-      if (!node || typeof node !== 'object') {
+      if (!node || typeof node !== "object") {
         return;
       }
 
@@ -249,7 +277,7 @@
       }
 
       for (const [key, value] of Object.entries(node)) {
-        const normalizedKeyName = normalizeKey(key).replace(/[^a-z0-9]/g, '');
+        const normalizedKeyName = normalizeKey(key).replace(/[^a-z0-9]/g, "");
 
         for (const [candidateKey, aliases] of Object.entries(aliasMap)) {
           if (aliases.includes(normalizedKeyName)) {
@@ -257,7 +285,7 @@
           }
         }
 
-        if (value && typeof value === 'object') {
+        if (value && typeof value === "object") {
           inspectNode(value);
         }
       }
@@ -293,7 +321,7 @@
     const candidateMap = {};
 
     function assignIfMeaningful(key, value) {
-      if (!isMeaningfulValue(value) && typeof value !== 'number') {
+      if (!isMeaningfulValue(value) && typeof value !== "number") {
         return;
       }
 
@@ -303,7 +331,7 @@
     }
 
     function walkNode(node) {
-      if (!node || typeof node !== 'object') {
+      if (!node || typeof node !== "object") {
         return;
       }
 
@@ -313,25 +341,25 @@
       }
 
       for (const [key, value] of Object.entries(node)) {
-        const normalizedKeyName = normalizeKey(key).replace(/[^a-z0-9]/g, '');
+        const normalizedKeyName = normalizeKey(key).replace(/[^a-z0-9]/g, "");
 
         if (
           [
-            'sc2id',
-            'sc2doc',
-            'sb1codigo',
-            'sb1desc',
-            'xxxdescchaveitensvar',
-            'sc2quant',
-            'sb1um',
-            'sc2emissao',
-            'sc2previsao',
+            "sc2id",
+            "sc2doc",
+            "sb1codigo",
+            "sb1desc",
+            "xxxdescchaveitensvar",
+            "sc2quant",
+            "sb1um",
+            "sc2emissao",
+            "sc2previsao",
           ].includes(normalizedKeyName)
         ) {
           assignIfMeaningful(normalizedKeyName, value);
         }
 
-        if (value && typeof value === 'object') {
+        if (value && typeof value === "object") {
           walkNode(value);
         }
       }
@@ -365,17 +393,19 @@
 
   function detectSupportedPage(candidates) {
     const normalizedUrl = normalizeKey(window.location.href);
-    const headingText = normalizeKey(document.body?.innerText?.slice(0, 1200) ?? '');
+    const headingText = normalizeKey(
+      document.body?.innerText?.slice(0, 1200) ?? "",
+    );
     const hasUrlHint =
-      normalizedUrl.includes('ordem') ||
-      normalizedUrl.includes('op') ||
-      normalizedUrl.includes('producao') ||
-      normalizedUrl.includes('production');
+      normalizedUrl.includes("ordem") ||
+      normalizedUrl.includes("op") ||
+      normalizedUrl.includes("producao") ||
+      normalizedUrl.includes("production");
     const hasPageHint =
-      headingText.includes('ordem de producao') ||
-      headingText.includes('ordem producao') ||
-      headingText.includes('op ') ||
-      headingText.includes('ordem de produção');
+      headingText.includes("ordem de producao") ||
+      headingText.includes("ordem producao") ||
+      headingText.includes("op ") ||
+      headingText.includes("ordem de produção");
     const hasFieldHint =
       isMeaningfulValue(candidates.orderNumber) ||
       isMeaningfulValue(candidates.productCode) ||
@@ -388,143 +418,148 @@
     return {
       externalOrderId:
         queryFirstMeaningfulValue([
-          '[data-external-order-id]',
-          '[data-order-id]',
+          "[data-external-order-id]",
+          "[data-order-id]",
           'input[name*="ordem"][name*="id"]',
           'input[name*="op"][name*="id"]',
-        ]) || extractValueNearLabel(['id ordem', 'id op', 'id da ordem']),
+        ]) || extractValueNearLabel(["id ordem", "id op", "id da ordem"]),
       orderNumber:
         queryFirstMeaningfulValue([
-          '[data-order-number]',
-          '[data-op-number]',
+          "[data-order-number]",
+          "[data-op-number]",
           'input[name="orderNumber"]',
           'input[name*="ordem"]',
           'input[name*="op"]',
         ]) ||
         extractValueNearLabel([
-          'ordem de producao',
-          'ordem producao',
-          'numero da ordem',
-          'numero da op',
-          'ordem',
-          'op',
+          "ordem de producao",
+          "ordem producao",
+          "numero da ordem",
+          "numero da op",
+          "ordem",
+          "op",
         ]),
       productCode:
         queryFirstMeaningfulValue([
-          '[data-product-code]',
+          "[data-product-code]",
           'input[name="productCode"]',
           'input[name*="produto"][name*="codigo"]',
           'input[name*="codproduto"]',
-        ]) || extractValueNearLabel(['codigo do produto', 'cod produto', 'produto codigo']),
+        ]) ||
+        extractValueNearLabel([
+          "codigo do produto",
+          "cod produto",
+          "produto codigo",
+        ]),
       productDescription:
         queryFirstMeaningfulValue([
-          '[data-product-description]',
+          "[data-product-description]",
           'textarea[name="productDescription"]',
           'input[name="productDescription"]',
           'input[name*="descricao"]',
         ]) ||
         extractValueNearLabel([
-          'descricao do produto',
-          'descricao produto',
-          'produto',
-          'descricao item',
+          "descricao do produto",
+          "descricao produto",
+          "produto",
+          "descricao item",
         ]),
       customerName:
         queryFirstMeaningfulValue([
-          '[data-customer-name]',
+          "[data-customer-name]",
           'input[name="customerName"]',
           'input[name*="cliente"]',
-        ]) ||
-        extractValueNearLabel(['cliente', 'razao social', 'fantasia']),
+        ]) || extractValueNearLabel(["cliente", "razao social", "fantasia"]),
       baseProduct:
         queryFirstMeaningfulValue([
-          '[data-base-product]',
+          "[data-base-product]",
           'input[name="baseProduct"]',
           'input[name*="produto"][name*="base"]',
-        ]) || extractValueNearLabel(['produto base', 'produto original']),
+        ]) || extractValueNearLabel(["produto base", "produto original"]),
       variations:
         queryFirstMeaningfulValue([
-          '[data-variations]',
+          "[data-variations]",
           'input[name="variations"]',
           'input[name*="variacao"]',
           'input[name*="grade"]',
-        ]) || extractValueNearLabel(['variacoes', 'variacao', 'grade']),
+        ]) || extractValueNearLabel(["variacoes", "variacao", "grade"]),
       color:
         queryFirstMeaningfulValue([
-          '[data-color]',
+          "[data-color]",
           'input[name="color"]',
           'input[name*="cor"]',
-        ]) || extractValueNearLabel(['cor']),
+        ]) || extractValueNearLabel(["cor"]),
       size:
         queryFirstMeaningfulValue([
-          '[data-size]',
+          "[data-size]",
           'input[name="size"]',
           'input[name*="tamanho"]',
-        ]) || extractValueNearLabel(['tamanho']),
+        ]) || extractValueNearLabel(["tamanho"]),
       quantity:
         queryFirstMeaningfulValue([
-          '[data-quantity]',
+          "[data-quantity]",
           'input[name="quantity"]',
           'input[name*="quantidade"]',
           'input[name*="qtd"]',
-        ]) || extractValueNearLabel(['quantidade', 'qtd']),
+        ]) || extractValueNearLabel(["quantidade", "qtd"]),
       unit:
         queryFirstMeaningfulValue([
-          '[data-unit]',
+          "[data-unit]",
           'input[name="unit"]',
           'input[name*="unidade"]',
-        ]) || extractValueNearLabel(['unidade', 'u.m.', 'um']),
+        ]) || extractValueNearLabel(["unidade", "u.m.", "um"]),
       issueDate:
         queryFirstMeaningfulValue([
-          '[data-issue-date]',
+          "[data-issue-date]",
           'input[name="issueDate"]',
           'input[name*="emissao"]',
-        ]) || extractValueNearLabel(['data emissao', 'emissao']),
+        ]) || extractValueNearLabel(["data emissao", "emissao"]),
       dueDate:
         queryFirstMeaningfulValue([
-          '[data-due-date]',
+          "[data-due-date]",
           'input[name="dueDate"]',
           'input[name*="entrega"]',
           'input[name*="prazo"]',
-        ]) || extractValueNearLabel(['data entrega', 'prazo', 'prazo producao']),
+        ]) ||
+        extractValueNearLabel(["data entrega", "prazo", "prazo producao"]),
       notes:
         queryFirstMeaningfulValue([
-          '[data-notes]',
+          "[data-notes]",
           'textarea[name="notes"]',
           'textarea[name*="observ"]',
-        ]) || extractValueNearLabel(['observacoes', 'obs']),
+        ]) || extractValueNearLabel(["observacoes", "obs"]),
     };
   }
 
   function getEndpointCandidates(filters = {}) {
     const currentUrl = new URL(window.location.href);
     const candidates = new Set();
-    const currentPath = currentUrl.pathname.replace(/\/+$/, '');
+    const currentPath = currentUrl.pathname.replace(/\/+$/, "");
 
-    if (Object.prototype.hasOwnProperty.call(filters, 'issueDateFrom')) {
+    if (Object.prototype.hasOwnProperty.call(filters, "issueDateFrom")) {
       if (filters.issueDateFrom) {
         currentUrl.searchParams.set(
-          'SC2_Emissao_De',
+          "SC2_Emissao_De",
           formatDateForErp(filters.issueDateFrom),
         );
       } else {
-        currentUrl.searchParams.delete('SC2_Emissao_De');
+        currentUrl.searchParams.delete("SC2_Emissao_De");
       }
     }
 
-    if (Object.prototype.hasOwnProperty.call(filters, 'issueDateTo')) {
+    if (Object.prototype.hasOwnProperty.call(filters, "issueDateTo")) {
       if (filters.issueDateTo) {
         currentUrl.searchParams.set(
-          'SC2_Emissao_Ate',
+          "SC2_Emissao_Ate",
           formatDateForErp(filters.issueDateTo),
         );
       } else {
-        currentUrl.searchParams.delete('SC2_Emissao_Ate');
+        currentUrl.searchParams.delete("SC2_Emissao_Ate");
       }
     }
 
     if (ERP_LIST_DATA_PATH_PATTERN.test(currentPath)) {
-      if (currentPath.endsWith('/data')) {
+      if (currentPath.endsWith("/data")) {
         candidates.add(currentUrl.toString());
       } else {
         const endpointUrl = new URL(`${currentPath}/data`, currentUrl.origin);
@@ -533,11 +568,8 @@
       }
     }
 
-    if (!currentPath.endsWith('/data')) {
-      const fallbackDataUrl = new URL(
-        `${currentPath}/data`,
-        currentUrl.origin,
-      );
+    if (!currentPath.endsWith("/data")) {
+      const fallbackDataUrl = new URL(`${currentPath}/data`, currentUrl.origin);
       fallbackDataUrl.search = currentUrl.search;
       candidates.add(fallbackDataUrl.toString());
     }
@@ -551,9 +583,9 @@
     for (const endpointUrl of endpointCandidates) {
       try {
         const response = await fetch(endpointUrl, {
-          credentials: 'include',
+          credentials: "include",
           headers: {
-            Accept: 'application/json',
+            Accept: "application/json",
           },
         });
 
@@ -561,9 +593,9 @@
           continue;
         }
 
-        const contentType = response.headers.get('content-type') ?? '';
+        const contentType = response.headers.get("content-type") ?? "";
 
-        if (!contentType.includes('application/json')) {
+        if (!contentType.includes("application/json")) {
           continue;
         }
 
@@ -584,8 +616,8 @@
   }
 
   function buildSc2ComplementaryFieldsLine(record) {
-    if (!record || typeof record !== 'object') {
-      return '';
+    if (!record || typeof record !== "object") {
+      return "";
     }
 
     const values = [];
@@ -598,11 +630,11 @@
       }
     }
 
-    return values.join(', ');
+    return values.join(", ");
   }
 
   function normalizeStructuredOrder(record) {
-    if (!record || typeof record !== 'object') {
+    if (!record || typeof record !== "object") {
       return null;
     }
 
@@ -626,7 +658,7 @@
       notes: complementaryFields || undefined,
       sourcePageUrl: window.location.href,
       rawPayload: {
-        extractionStrategy: 'endpoint+dom',
+        extractionStrategy: "endpoint+dom",
         collectedAt: new Date().toISOString(),
         selectionKey: [
           normalizeText(record.SC2_ID),
@@ -634,7 +666,7 @@
           normalizeText(record.SB1_Codigo),
         ]
           .filter(Boolean)
-          .join('|'),
+          .join("|"),
         candidates: {
           externalOrderId: normalizeText(record.SC2_ID),
           orderNumber: normalizeText(record.SC2_Doc),
@@ -663,7 +695,7 @@
       normalizeText(payload?.item?.productCode),
     ]
       .filter(Boolean)
-      .join('|');
+      .join("|");
   }
 
   function scoreStructuredRecord(record, hints) {
@@ -729,10 +761,9 @@
       topScore >= 8 || (topScore >= 6 && topScore > secondScore);
 
     return {
-      record: hasReliableMatch ? topMatch?.record ?? null : null,
+      record: hasReliableMatch ? (topMatch?.record ?? null) : null,
       score: topScore,
-      requiresExplicitSelection:
-        records.length > 1 && !hasReliableMatch,
+      requiresExplicitSelection: records.length > 1 && !hasReliableMatch,
     };
   }
 
@@ -763,23 +794,26 @@
     const missingFields = [];
 
     if (!payload.externalOrderId) {
-      missingFields.push('externalOrderId');
+      missingFields.push("externalOrderId");
     }
 
     if (!payload.orderNumber) {
-      missingFields.push('orderNumber');
+      missingFields.push("orderNumber");
     }
 
     if (!payload.item.productCode) {
-      missingFields.push('item.productCode');
+      missingFields.push("item.productCode");
     }
 
     if (!payload.item.productDescription) {
-      missingFields.push('item.productDescription');
+      missingFields.push("item.productDescription");
     }
 
-    if (typeof payload.item.quantity !== 'number' || payload.item.quantity <= 0) {
-      missingFields.push('item.quantity');
+    if (
+      typeof payload.item.quantity !== "number" ||
+      payload.item.quantity <= 0
+    ) {
+      missingFields.push("item.quantity");
     }
 
     return {
@@ -795,11 +829,11 @@
     const urlFilters = readEmissionFiltersFromUrl();
     const hasRequestedFrom = Object.prototype.hasOwnProperty.call(
       requestedFilters,
-      'issueDateFrom',
+      "issueDateFrom",
     );
     const hasRequestedTo = Object.prototype.hasOwnProperty.call(
       requestedFilters,
-      'issueDateTo',
+      "issueDateTo",
     );
     const activeFilters = {
       issueDateFrom: hasRequestedFrom
@@ -813,12 +847,12 @@
       ...domCandidates,
       ...Object.fromEntries(
         Object.entries(structuredCandidates).filter(([, value]) => {
-          return value !== undefined && value !== null && value !== '';
+          return value !== undefined && value !== null && value !== "";
         }),
       ),
       ...Object.fromEntries(
         Object.entries(pageBootstrapCandidates).filter(([, value]) => {
-          return value !== undefined && value !== null && value !== '';
+          return value !== undefined && value !== null && value !== "";
         }),
       ),
     };
@@ -829,7 +863,8 @@
         return isRecordWithinIssueDateRange(record, activeFilters);
       });
       const hasActiveDateFilters =
-        Boolean(activeFilters.issueDateFrom) || Boolean(activeFilters.issueDateTo);
+        Boolean(activeFilters.issueDateFrom) ||
+        Boolean(activeFilters.issueDateTo);
       const sourceRecords = hasActiveDateFilters
         ? filteredRecords
         : endpointMatch.payload.data;
@@ -862,14 +897,14 @@
         variations: normalizeText(mergedCandidates.variations),
       });
       const structuredPayload = bestStructuredMatch.record
-        ? structuredPayloads.find((payload) => {
+        ? (structuredPayloads.find((payload) => {
             return (
               buildPayloadSelectionKey(payload) ===
               buildPayloadSelectionKey(
                 normalizeStructuredOrder(bestStructuredMatch.record),
               )
             );
-          }) ?? null
+          }) ?? null)
         : null;
 
       if (structuredPayloads.length > 0) {
@@ -879,14 +914,14 @@
           missingFields: structuredPayload
             ? buildPayloadFromCandidates(
                 structuredPayload.rawPayload.candidates,
-                'endpoint+dom',
+                "endpoint+dom",
               ).missingFields
             : [],
           payloadOptions: structuredPayloads.map((payload) => ({
             payload,
             missingFields: buildPayloadFromCandidates(
               payload.rawPayload.candidates,
-              'endpoint+dom',
+              "endpoint+dom",
             ).missingFields,
           })),
           extractionMeta: {
@@ -904,10 +939,10 @@
     }
 
     const fallbackExtractionStrategy = structuredCandidates.orderNumber
-      ? 'structured+dom'
+      ? "structured+dom"
       : pageBootstrapCandidates.orderNumber
-        ? 'bootstrap+dom'
-        : 'dom';
+        ? "bootstrap+dom"
+        : "dom";
     const fallback = buildPayloadFromCandidates(
       mergedCandidates,
       fallbackExtractionStrategy,
@@ -925,7 +960,8 @@
       ],
       extractionMeta: {
         usedStructuredSource: Boolean(
-          structuredCandidates.orderNumber || pageBootstrapCandidates.orderNumber,
+          structuredCandidates.orderNumber ||
+          pageBootstrapCandidates.orderNumber,
         ),
         sourcePageUrl: window.location.href,
         activeFilters,
@@ -934,7 +970,7 @@
   }
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-    if (message?.type === 'ERP_FLEX_HEALTHCHECK') {
+    if (message?.type === "ERP_FLEX_HEALTHCHECK") {
       sendResponse({
         ok: true,
         version: CONTENT_SCRIPT_VERSION,
@@ -942,7 +978,7 @@
       return;
     }
 
-    if (message?.type !== 'ERP_FLEX_COLLECT_ORDER') {
+    if (message?.type !== "ERP_FLEX_COLLECT_ORDER") {
       return;
     }
 
@@ -951,9 +987,9 @@
         if (!result.supportedPage) {
           sendResponse({
             ok: false,
-            code: 'ERP_FLEX_UNSUPPORTED_PAGE',
+            code: "ERP_FLEX_UNSUPPORTED_PAGE",
             message:
-              'A pagina atual nao parece ser uma ordem de producao suportada do ERP Flex.',
+              "A página atual não parece ser uma ordem de produção suportada do ERP Flex.",
             extractionMeta: result.extractionMeta,
           });
           return;
@@ -962,8 +998,8 @@
         if (result.payloadOptions.length === 0) {
           sendResponse({
             ok: false,
-            code: 'ERP_FLEX_NO_RESULTS_FOR_FILTERS',
-            message: 'Nenhuma ordem foi encontrada para o periodo informado.',
+            code: "ERP_FLEX_NO_RESULTS_FOR_FILTERS",
+            message: "Nenhuma ordem foi encontrada para o período informado.",
             extractionMeta: result.extractionMeta,
           });
           return;
@@ -972,8 +1008,9 @@
         if (result.missingFields.length > 0) {
           sendResponse({
             ok: false,
-            code: 'ERP_FLEX_REQUIRED_FIELDS_MISSING',
-            message: 'Nao foi possivel capturar todos os campos obrigatorios da ordem.',
+            code: "ERP_FLEX_REQUIRED_FIELDS_MISSING",
+            message:
+              "Não foi possível capturar todos os campos obrigatórios da ordem.",
             missingFields: result.missingFields,
             payloadPreview: result.payload,
             extractionMeta: result.extractionMeta,
@@ -991,11 +1028,11 @@
       .catch((error) => {
         sendResponse({
           ok: false,
-          code: 'ERP_FLEX_CAPTURE_ERROR',
+          code: "ERP_FLEX_CAPTURE_ERROR",
           message:
             error instanceof Error
               ? error.message
-              : 'Falha inesperada ao capturar a ordem do ERP.',
+              : "Falha inesperada ao capturar a ordem do ERP.",
         });
       });
 

@@ -74,6 +74,7 @@ Projeto reduzido para as stacks ativas `front-end` (React/Vite) e `backend`, pre
 - A quantidade `SC2_Quant` ainda pode chegar com separador de milhar ambiguo; a change request 032 normaliza esse parsing, evita quebra visual da unidade na popup e força reinjecao do coletor atualizado quando a aba estiver com script antigo.
 - Quando o endpoint do ERP retorna varias OPs, a extensao ainda pode assumir automaticamente o registro errado; a change request 033 torna a auto-selecao conservadora e exige escolha manual quando o match for ambiguo.
 - A quantidade na popup ainda estava seguindo a heuristica errada de milhar e misturando unidade na mesma linha; a change request 034 adapta o parsing ao padrao real do ERP e separa `Unidade de Medida`.
+- A criacao da OP na popup ainda carece de confirmacao final, blindagem contra clique duplo e tratamento visual claro de erro/sucesso; a change request 035 cobre esse fechamento operacional.
 
 ## Estrategia de execucao
 
@@ -120,6 +121,7 @@ Projeto reduzido para as stacks ativas `front-end` (React/Vite) e `backend`, pre
 - [done] `tasks/change-requests/032-corrigir-leitura-de-quantidade-com-milhar-na-extensao.md` - Corrigir leitura de quantidade com milhar na extensao.
 - [done] `tasks/change-requests/033-evitar-auto-selecao-incorreta-de-op-na-extensao.md` - Evitar auto-selecao incorreta de OP quando a analise retornar varias ordens.
 - [done] `tasks/change-requests/034-separar-unidade-da-quantidade-na-popup-e-tratar-000-como-casas-decimais.md` - Separar unidade da quantidade na popup e tratar `,000`/`.000` como casas decimais.
+- [done] `tasks/change-requests/035-adicionar-confirmacao-anti-duplicidade-e-feedback-claro-na-criacao-da-op.md` - Adicionar confirmacao final, bloqueio de clique duplo e feedback claro na criacao da OP pelo popup da extensao.
 - [done] `tasks/001-definir-contrato-e-modelo-de-ordem-de-producao.md` - Definir contrato OpenAPI e modelo funcional do MVP de Ordem de Producao.
 - [done] `tasks/005-estruturar-extensao-de-navegador-para-importacao-erp-flex.md` - Criar a extensao MVP para importar ordens do ERP Flex.
 - [blocked] `tasks/006-fechar-fluxo-de-rastreabilidade-e-validacao-fim-a-fim.md` - Consolidar rastreabilidade da origem ERP e validar o fluxo ponta a ponta.
@@ -184,6 +186,7 @@ Projeto reduzido para as stacks ativas `front-end` (React/Vite) e `backend`, pre
 - `tasks/change-requests/032-corrigir-leitura-de-quantidade-com-milhar-na-extensao.md`: depende de `tasks/change-requests/031-exibir-campos-sc2-unificados-na-extensao.md` e corrige o parsing de `SC2_Quant` quando o ERP devolve milhar com separador ambiguo, preservando a leitura compacta da unidade na popup.
 - `tasks/change-requests/033-evitar-auto-selecao-incorreta-de-op-na-extensao.md`: depende de `tasks/change-requests/032-corrigir-leitura-de-quantidade-com-milhar-na-extensao.md` e impede que a popup assuma uma OP arbitraria quando o endpoint retorna varias ordens sem match confiavel com a tela atual.
 - `tasks/change-requests/034-separar-unidade-da-quantidade-na-popup-e-tratar-000-como-casas-decimais.md`: depende de `tasks/change-requests/033-evitar-auto-selecao-incorreta-de-op-na-extensao.md` e ajusta a exibicao para o padrao real do ERP, em que `,000` e `.000` representam casas decimais zeradas e a unidade deve aparecer em linha propria.
+- `tasks/change-requests/035-adicionar-confirmacao-anti-duplicidade-e-feedback-claro-na-criacao-da-op.md`: depende de `tasks/change-requests/028-adicionar-botao-de-fazer-analise-para-buscar-ops-do-erp.md`, `tasks/change-requests/033-evitar-auto-selecao-incorreta-de-op-na-extensao.md` e `tasks/change-requests/034-separar-unidade-da-quantidade-na-popup-e-tratar-000-como-casas-decimais.md`, fechando a etapa final de criacao com confirmacao, bloqueio de reenvio e feedback operacional claro.
 
 ## Duvidas para validacao humana
 

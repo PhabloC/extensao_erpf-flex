@@ -201,6 +201,86 @@
             <div id="status-details" class="feedback-details" hidden></div>
           </section>
 
+          <section
+            id="import-confirmation-panel"
+            class="confirm-panel"
+            hidden
+            aria-labelledby="import-confirmation-title"
+          >
+            <div class="confirm-panel__header">
+              <h2 id="import-confirmation-title">Confirmar criação da OP</h2>
+              <button
+                id="cancel-confirmation-button"
+                type="button"
+                class="icon-button"
+                aria-label="Cancelar confirmação"
+              >
+                <span aria-hidden="true">&#10005;</span>
+              </button>
+            </div>
+            <p class="confirm-panel__copy">
+              Revise a OP selecionada antes de enviar para o sistema destino.
+            </p>
+            <dl class="confirm-list">
+              <div class="confirm-row">
+                <dt>OP:</dt>
+                <dd id="confirm-order-number">Não capturada</dd>
+              </div>
+              <div class="confirm-row">
+                <dt>Produto ERP:</dt>
+                <dd id="confirm-product-erp">Não capturado</dd>
+              </div>
+              <div class="confirm-row">
+                <dt>Código:</dt>
+                <dd id="confirm-product-code">Não capturado</dd>
+              </div>
+              <div class="confirm-row">
+                <dt>Cliente:</dt>
+                <dd id="confirm-customer-name">Não capturado</dd>
+              </div>
+              <div class="confirm-row">
+                <dt>Produto base:</dt>
+                <dd id="confirm-product-base">Não identificado</dd>
+              </div>
+              <div class="confirm-row">
+                <dt>Variações:</dt>
+                <dd id="confirm-variations">Não identificadas</dd>
+              </div>
+              <div class="confirm-row">
+                <dt>Quantidade:</dt>
+                <dd id="confirm-quantity">Não capturada</dd>
+              </div>
+              <div class="confirm-row">
+                <dt>Unidade de Medida:</dt>
+                <dd id="confirm-unit">Não capturada</dd>
+              </div>
+              <div class="confirm-row">
+                <dt>Prazo:</dt>
+                <dd id="confirm-due-date">Não capturado</dd>
+              </div>
+              <div class="confirm-row">
+                <dt>Observações:</dt>
+                <dd id="confirm-notes">Não capturadas</dd>
+              </div>
+            </dl>
+            <div class="confirm-panel__actions">
+              <button
+                id="confirm-import-button"
+                type="button"
+                class="action-button action-button--primary"
+              >
+                Confirmar e criar OP
+              </button>
+              <button
+                id="dismiss-confirmation-button"
+                type="button"
+                class="action-button action-button--secondary"
+              >
+                Cancelar
+              </button>
+            </div>
+          </section>
+
           <div class="actions">
             <button
               id="import-button"

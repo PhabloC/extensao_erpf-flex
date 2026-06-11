@@ -495,6 +495,69 @@ img.traceability-icon {
   gap: 8px;
 }
 
+.confirm-panel {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(92, 129, 194, 0.22);
+  border-radius: 8px;
+  background: rgba(7, 23, 49, 0.84);
+}
+
+.confirm-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.confirm-panel__header h2 {
+  margin: 0;
+  font-size: 12px;
+  color: #f0f5ff;
+  font-weight: 700;
+}
+
+.confirm-panel__copy {
+  margin: 0;
+  font-size: 11px;
+  color: #b8c9ea;
+}
+
+.confirm-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.confirm-row {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+}
+
+.confirm-row dt,
+.confirm-row dd {
+  margin: 0;
+  font-size: 12px;
+}
+
+.confirm-row dt {
+  color: #8fa6d0;
+}
+
+.confirm-row dd {
+  color: #ffffff;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.confirm-panel__actions {
+  display: grid;
+  gap: 8px;
+}
+
 .feedback-message {
   margin: 0;
   font-size: 12px;
@@ -601,6 +664,10 @@ img.traceability-icon {
 }
 
 .action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   min-height: 38px;
   border: none;
   border-radius: 8px;
@@ -626,6 +693,28 @@ img.traceability-icon {
   background: linear-gradient(180deg, #2c83ee 0%, #145fd0 100%);
 }
 
+.action-button--success {
+  background: linear-gradient(180deg, #2ea56c 0%, #208251 100%);
+  color: #ffffff;
+  box-shadow: 0 10px 20px rgba(32, 130, 81, 0.28);
+}
+
+.action-button--loading::before {
+  content: "";
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.28);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: action-button-spin 0.8s linear infinite;
+}
+
+.action-button--success::before {
+  content: "\2713";
+  font-size: 13px;
+  line-height: 1;
+}
+
 .action-button--secondary,
 .action-button--ghost {
   background: rgba(255, 255, 255, 0.08);
@@ -648,4 +737,14 @@ img.traceability-icon {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+@keyframes action-button-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
