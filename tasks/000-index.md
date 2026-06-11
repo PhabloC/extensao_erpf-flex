@@ -71,6 +71,9 @@ Projeto reduzido para as stacks ativas `front-end` (React/Vite) e `backend`, pre
 - A popup ainda pode quebrar quando o script tenta controlar botoes removidos do HTML; a change request 029 blinda esse controle de estado.
 - A tela avancada ainda precisa reposicionar a seta de voltar para o inicio do cabeçalho; a change request 030 aplica esse ajuste visual.
 - Os campos complementares `SC2_Campo1` a `SC2_Campo30` do endpoint passaram a ser unificados e exibidos na popup; a change request 031 concluiu esse ajuste.
+- A quantidade `SC2_Quant` ainda pode chegar com separador de milhar ambiguo; a change request 032 normaliza esse parsing, evita quebra visual da unidade na popup e força reinjecao do coletor atualizado quando a aba estiver com script antigo.
+- Quando o endpoint do ERP retorna varias OPs, a extensao ainda pode assumir automaticamente o registro errado; a change request 033 torna a auto-selecao conservadora e exige escolha manual quando o match for ambiguo.
+- A quantidade na popup ainda estava seguindo a heuristica errada de milhar e misturando unidade na mesma linha; a change request 034 adapta o parsing ao padrao real do ERP e separa `Unidade de Medida`.
 
 ## Estrategia de execucao
 
@@ -114,6 +117,9 @@ Projeto reduzido para as stacks ativas `front-end` (React/Vite) e `backend`, pre
 - [done] `tasks/change-requests/029-corrigir-null-reference-na-popup-ao-controlar-botoes-ausentes.md` - Corrigir null reference na popup ao controlar botoes ausentes.
 - [done] `tasks/change-requests/030-mover-seta-de-voltar-para-o-canto-esquerdo-da-configuracao-avancada.md` - Mover a seta de voltar para o canto esquerdo da configuracao avancada.
 - [done] `tasks/change-requests/031-exibir-campos-sc2-unificados-na-extensao.md` - Exibir campos SC2_Campo1 a SC2_Campo30 unificados em uma linha na extensao.
+- [done] `tasks/change-requests/032-corrigir-leitura-de-quantidade-com-milhar-na-extensao.md` - Corrigir leitura de quantidade com milhar na extensao.
+- [done] `tasks/change-requests/033-evitar-auto-selecao-incorreta-de-op-na-extensao.md` - Evitar auto-selecao incorreta de OP quando a analise retornar varias ordens.
+- [done] `tasks/change-requests/034-separar-unidade-da-quantidade-na-popup-e-tratar-000-como-casas-decimais.md` - Separar unidade da quantidade na popup e tratar `,000`/`.000` como casas decimais.
 - [done] `tasks/001-definir-contrato-e-modelo-de-ordem-de-producao.md` - Definir contrato OpenAPI e modelo funcional do MVP de Ordem de Producao.
 - [done] `tasks/005-estruturar-extensao-de-navegador-para-importacao-erp-flex.md` - Criar a extensao MVP para importar ordens do ERP Flex.
 - [blocked] `tasks/006-fechar-fluxo-de-rastreabilidade-e-validacao-fim-a-fim.md` - Consolidar rastreabilidade da origem ERP e validar o fluxo ponta a ponta.
@@ -175,6 +181,9 @@ Projeto reduzido para as stacks ativas `front-end` (React/Vite) e `backend`, pre
 - `tasks/change-requests/029-corrigir-null-reference-na-popup-ao-controlar-botoes-ausentes.md`: depende de `tasks/change-requests/028-adicionar-botao-de-fazer-analise-para-buscar-ops-do-erp.md` e corrige a regressao de runtime deixada por referencias a controles opcionais removidos.
 - `tasks/change-requests/030-mover-seta-de-voltar-para-o-canto-esquerdo-da-configuracao-avancada.md`: depende de `tasks/change-requests/026-alinhar-botao-de-voltar-a-direita-no-cabecalho-avancado.md` e inverte essa decisao visual para atender o novo posicionamento pedido pelo usuario.
 - `tasks/change-requests/031-exibir-campos-sc2-unificados-na-extensao.md`: depende de `tasks/change-requests/008-priorizar-captura-por-endpoint-json-do-erp-flex.md`, `tasks/change-requests/010-suportar-listagem-de-ops-na-popup-com-foco-no-codigo.md` e `tasks/change-requests/016-exibir-cliente-na-captura-da-extensao.md`, adicionando observacoes unificadas dos campos `SC2_Campo1` a `SC2_Campo30` na popup da extensao.
+- `tasks/change-requests/032-corrigir-leitura-de-quantidade-com-milhar-na-extensao.md`: depende de `tasks/change-requests/031-exibir-campos-sc2-unificados-na-extensao.md` e corrige o parsing de `SC2_Quant` quando o ERP devolve milhar com separador ambiguo, preservando a leitura compacta da unidade na popup.
+- `tasks/change-requests/033-evitar-auto-selecao-incorreta-de-op-na-extensao.md`: depende de `tasks/change-requests/032-corrigir-leitura-de-quantidade-com-milhar-na-extensao.md` e impede que a popup assuma uma OP arbitraria quando o endpoint retorna varias ordens sem match confiavel com a tela atual.
+- `tasks/change-requests/034-separar-unidade-da-quantidade-na-popup-e-tratar-000-como-casas-decimais.md`: depende de `tasks/change-requests/033-evitar-auto-selecao-incorreta-de-op-na-extensao.md` e ajusta a exibicao para o padrao real do ERP, em que `,000` e `.000` representam casas decimais zeradas e a unidade deve aparecer em linha propria.
 
 ## Duvidas para validacao humana
 

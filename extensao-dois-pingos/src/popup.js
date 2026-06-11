@@ -21,6 +21,7 @@ const captureCustomerName = document.getElementById("capture-customer-name");
 const captureProductBase = document.getElementById("capture-product-base");
 const captureVariations = document.getElementById("capture-variations");
 const captureQuantity = document.getElementById("capture-quantity");
+const captureUnit = document.getElementById("capture-unit");
 const captureDueDate = document.getElementById("capture-due-date");
 const captureNotes = document.getElementById("capture-notes");
 
@@ -33,6 +34,8 @@ const state = {
 
 const NO_RECEIVER_ERROR_PATTERN =
   /receiving end does not exist|could not establish connection/i;
+const EXPECTED_CONTENT_SCRIPT_VERSION =
+  "2026-06-11-quantity-and-unit-layout-fix";
 
 const MOCK_PREVIEW_PAYLOAD = {
   externalOrderId: "OP-12345",
@@ -162,7 +165,7 @@ function formatDate(value) {
   return normalized;
 }
 
-function formatQuantity(value, unit) {
+function formatQuantity(value) {
   if (typeof value !== "number" || !Number.isFinite(value)) {
     return "Não capturada";
   }
@@ -173,9 +176,7 @@ function formatQuantity(value, unit) {
         minimumFractionDigits: 0,
         maximumFractionDigits: 2,
       });
-  const renderedUnit = normalizeText(unit);
-
-  return renderedUnit ? `${renderedValue} ${renderedUnit}` : renderedValue;
+  return renderedValue;
 }
 
 function formatDetailLabel(label, value) {
@@ -238,12 +239,19 @@ async function requestOrderCollection(activeTab) {
   }
 
   try {
-    return await chrome.tabs.sendMessage(activeTab.id, {
-      type: "ERP_FLEX_COLLECT_ORDER",
-      filters: state.activeFilters,
+    const healthcheck = await chrome.tabs.sendMessage(activeTab.id, {
+      type: "ERP_FLEX_HEALTHCHECK",
     });
+
+    if (healthcheck?.version !== EXPECTED_CONTENT_SCRIPT_VERSION) {
+      throw new Error("ERP_FLEX_OUTDATED_CONTENT_SCRIPT");
+    }
   } catch (error) {
-    if (!isReceiverMissingError(error)) {
+    const isOutdatedScriptError =
+      error instanceof Error &&
+      error.message === "ERP_FLEX_OUTDATED_CONTENT_SCRIPT";
+
+    if (!isOutdatedScriptError && !isReceiverMissingError(error)) {
       throw error;
     }
 
@@ -257,19 +265,19 @@ async function requestOrderCollection(activeTab) {
       },
       files: ["src/content-script.js"],
     });
+  }
 
-    try {
-      return await chrome.tabs.sendMessage(activeTab.id, {
-        type: "ERP_FLEX_COLLECT_ORDER",
-        filters: state.activeFilters,
-      });
-    } catch (reinjectedError) {
-      if (isReceiverMissingError(reinjectedError)) {
-        throw new Error(buildReceiverGuidance(activeTab));
-      }
-
-      throw reinjectedError;
+  try {
+    return await chrome.tabs.sendMessage(activeTab.id, {
+      type: "ERP_FLEX_COLLECT_ORDER",
+      filters: state.activeFilters,
+    });
+  } catch (error) {
+    if (isReceiverMissingError(error)) {
+      throw new Error(buildReceiverGuidance(activeTab));
     }
+
+    throw error;
   }
 }
 
@@ -503,10 +511,8 @@ function renderCapturedData(payload) {
     snapshot.variations,
     "Não identificadas",
   );
-  captureQuantity.textContent = formatQuantity(
-    snapshot.quantity,
-    snapshot.unit,
-  );
+  captureQuantity.textContent = formatQuantity(snapshot.quantity);
+  captureUnit.textContent = formatFallback(snapshot.unit, "Não capturada");
   captureDueDate.textContent = formatDate(snapshot.dueDate);
   captureNotes.textContent = formatFallback(snapshot.notes, "Não capturadas");
 
@@ -528,6 +534,7 @@ function clearCapturedData() {
   captureProductBase.textContent = "Não identificado";
   captureVariations.textContent = "Não identificadas";
   captureQuantity.textContent = "Não capturada";
+  captureUnit.textContent = "Não capturada";
   captureDueDate.textContent = "Não capturado";
   captureNotes.textContent = "Não capturadas";
   orderSelectorSection.hidden = true;
@@ -712,13 +719,13 @@ async function collectOrderPreview() {
     : [response.payload];
 
   state.currentPayloadOptions = payloadOptions;
-  state.currentPayload = response.payload;
+  state.currentPayload = response.payload ?? null;
   syncDateFilters(response?.extractionMeta?.activeFilters);
-  renderOrderOptions(payloadOptions, response.payload);
-  renderCapturedData(response.payload);
-  importButton.disabled = false;
+  renderOrderOptions(payloadOptions, state.currentPayload);
+  renderCapturedData(state.currentPayload);
+  importButton.disabled = !state.currentPayload;
 
-  const snapshot = buildDerivedSnapshot(response.payload);
+  const snapshot = buildDerivedSnapshot(state.currentPayload);
   const details = [];
 
   if (snapshot.extractionStrategy) {
@@ -747,11 +754,20 @@ async function collectOrderPreview() {
     );
   }
 
-  renderFeedback(
-    "Análise concluída. Revise a OP encontrada e siga para a criação no kanban.",
-    details,
-    "success",
-  );
+  if (response?.extractionMeta?.requiresExplicitSelection) {
+    renderFeedback(
+      "A análise encontrou várias OPs e não conseguiu confirmar automaticamente qual corresponde à tela atual. Selecione a ordem correta na lista antes de importar.",
+      details,
+      "error",
+    );
+    setMappingState("warning", "Selecionar OP");
+  } else {
+    renderFeedback(
+      "Análise concluída. Revise a OP encontrada e siga para a criação no kanban.",
+      details,
+      "success",
+    );
+  }
 
   return response.payload;
 }

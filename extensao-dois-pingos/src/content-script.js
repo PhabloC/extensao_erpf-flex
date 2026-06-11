@@ -1,6 +1,7 @@
 (function bootstrapErpFlexCollector() {
   const ERP_LIST_DATA_PATH_PATTERN =
     /\/erp\/lancamentos\/producao\/ordensproducao(?:\/data)?(?:\/)?$/i;
+  const CONTENT_SCRIPT_VERSION = '2026-06-11-quantity-and-unit-layout-fix';
 
   function normalizeText(value) {
     return String(value ?? '')
@@ -26,11 +27,36 @@
       return rawValue;
     }
 
-    const normalized = normalizeText(rawValue)
-      .replace(/[^\d,.-]/g, '')
-      .replace(/\.(?=\d{3}(?:\D|$))/g, '')
-      .replace(',', '.');
-    const parsed = Number(normalized);
+    const normalized = normalizeText(rawValue).replace(/[^\d,.-]/g, '');
+
+    if (!normalized) {
+      return null;
+    }
+
+    const hasComma = normalized.includes(',');
+    const hasDot = normalized.includes('.');
+    let numericString = normalized;
+
+    if (hasComma && hasDot) {
+      const decimalSeparator =
+        normalized.lastIndexOf(',') > normalized.lastIndexOf('.') ? ',' : '.';
+      const thousandsSeparator = decimalSeparator === ',' ? '.' : ',';
+
+      numericString = normalized
+        .split(thousandsSeparator)
+        .join('')
+        .replace(decimalSeparator, '.');
+    } else if (hasComma) {
+      numericString = /^\-?\d+,\d{3}$/.test(normalized)
+        ? normalized.replace(',', '.')
+        : normalized.replace(',', '.');
+    } else if (hasDot) {
+      numericString = /^\-?\d+\.\d{3}$/.test(normalized)
+        ? normalized
+        : normalized;
+    }
+
+    const parsed = Number(numericString);
 
     return Number.isFinite(parsed) ? parsed : null;
   }
@@ -681,7 +707,11 @@
 
   function pickBestStructuredRecord(records, hints) {
     if (!Array.isArray(records) || records.length === 0) {
-      return null;
+      return {
+        record: null,
+        score: 0,
+        requiresExplicitSelection: false,
+      };
     }
 
     const ranked = records
@@ -691,7 +721,19 @@
       }))
       .sort((left, right) => right.score - left.score);
 
-    return ranked[0]?.record ?? records[0] ?? null;
+    const topMatch = ranked[0] ?? null;
+    const secondMatch = ranked[1] ?? null;
+    const topScore = topMatch?.score ?? 0;
+    const secondScore = secondMatch?.score ?? 0;
+    const hasReliableMatch =
+      topScore >= 8 || (topScore >= 6 && topScore > secondScore);
+
+    return {
+      record: hasReliableMatch ? topMatch?.record ?? null : null,
+      score: topScore,
+      requiresExplicitSelection:
+        records.length > 1 && !hasReliableMatch,
+    };
   }
 
   function buildPayloadFromCandidates(mergedCandidates, extractionStrategy) {
@@ -812,29 +854,34 @@
       const structuredPayloads = sourceRecords
         .map(normalizeStructuredOrder)
         .filter(Boolean);
-      const bestStructuredRecord = pickBestStructuredRecord(sourceRecords, {
+      const bestStructuredMatch = pickBestStructuredRecord(sourceRecords, {
         externalOrderId: normalizeText(mergedCandidates.externalOrderId),
         orderNumber: normalizeText(mergedCandidates.orderNumber),
         productCode: normalizeText(mergedCandidates.productCode),
         productDescription: normalizeText(mergedCandidates.productDescription),
         variations: normalizeText(mergedCandidates.variations),
       });
-      const structuredPayload =
-        structuredPayloads.find((payload) => {
-          return (
-            buildPayloadSelectionKey(payload) ===
-            buildPayloadSelectionKey(normalizeStructuredOrder(bestStructuredRecord))
-          );
-        }) ?? structuredPayloads[0] ?? null;
+      const structuredPayload = bestStructuredMatch.record
+        ? structuredPayloads.find((payload) => {
+            return (
+              buildPayloadSelectionKey(payload) ===
+              buildPayloadSelectionKey(
+                normalizeStructuredOrder(bestStructuredMatch.record),
+              )
+            );
+          }) ?? null
+        : null;
 
-      if (structuredPayload && structuredPayloads.length > 0) {
+      if (structuredPayloads.length > 0) {
         return {
           supportedPage: detectSupportedPage(mergedCandidates),
           payload: structuredPayload,
-          missingFields: buildPayloadFromCandidates(
-            structuredPayload.rawPayload.candidates,
-            'endpoint+dom',
-          ).missingFields,
+          missingFields: structuredPayload
+            ? buildPayloadFromCandidates(
+                structuredPayload.rawPayload.candidates,
+                'endpoint+dom',
+              ).missingFields
+            : [],
           payloadOptions: structuredPayloads.map((payload) => ({
             payload,
             missingFields: buildPayloadFromCandidates(
@@ -848,6 +895,9 @@
             endpointUrl: endpointMatch.endpointUrl,
             totalStructuredOrders: structuredPayloads.length,
             activeFilters,
+            bestMatchScore: bestStructuredMatch.score,
+            requiresExplicitSelection:
+              bestStructuredMatch.requiresExplicitSelection,
           },
         };
       }
@@ -884,6 +934,14 @@
   }
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (message?.type === 'ERP_FLEX_HEALTHCHECK') {
+      sendResponse({
+        ok: true,
+        version: CONTENT_SCRIPT_VERSION,
+      });
+      return;
+    }
+
     if (message?.type !== 'ERP_FLEX_COLLECT_ORDER') {
       return;
     }
@@ -901,7 +959,7 @@
           return;
         }
 
-        if (!result.payload || result.payloadOptions.length === 0) {
+        if (result.payloadOptions.length === 0) {
           sendResponse({
             ok: false,
             code: 'ERP_FLEX_NO_RESULTS_FOR_FILTERS',
