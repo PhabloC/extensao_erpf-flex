@@ -1,4 +1,6 @@
 const EXTENSION_STORAGE_KEY = "erpFlexImporterSettings";
+const EXTENSION_LOG_STORAGE_KEY = "erpFlexImporterLogs";
+const MAX_EXTENSION_LOGS = 100;
 
 function createExtensionError(message, options = {}) {
   const error = new Error(message);
@@ -62,6 +64,64 @@ async function writeSettings(partialSettings) {
   });
 
   return next;
+}
+
+async function readLogs() {
+  const stored = await getStorageArea().get(EXTENSION_LOG_STORAGE_KEY);
+  const logs = stored[EXTENSION_LOG_STORAGE_KEY];
+
+  return Array.isArray(logs) ? logs : [];
+}
+
+async function writeLogs(logs) {
+  const normalizedLogs = Array.isArray(logs)
+    ? logs.slice(0, MAX_EXTENSION_LOGS)
+    : [];
+
+  await getStorageArea().set({
+    [EXTENSION_LOG_STORAGE_KEY]: normalizedLogs,
+  });
+
+  return normalizedLogs;
+}
+
+function normalizeLogDetails(details) {
+  if (!Array.isArray(details)) {
+    return [];
+  }
+
+  return details
+    .map((entry) => String(entry ?? "").trim())
+    .filter(Boolean)
+    .slice(0, 10);
+}
+
+function buildLogEntry(entry = {}) {
+  return {
+    createdAt: new Date().toISOString(),
+    source: String(entry.source ?? "extensao").trim() || "extensao",
+    level: String(entry.level ?? "info").trim().toLowerCase() || "info",
+    message: String(entry.message ?? "Evento sem descricao.").trim(),
+    details: normalizeLogDetails(entry.details),
+  };
+}
+
+async function appendLog(entry) {
+  const currentLogs = await readLogs();
+  const nextLogs = [buildLogEntry(entry), ...currentLogs].slice(
+    0,
+    MAX_EXTENSION_LOGS,
+  );
+
+  return writeLogs(nextLogs);
+}
+
+async function logExtensionEvent(entry) {
+  try {
+    await appendLog(entry);
+  } catch {
+    // Logging deve ser melhor esforco e nunca bloquear o fluxo principal.
+  }
 }
 
 function normalizeApiBaseUrl(rawValue) {
@@ -310,12 +370,49 @@ async function handleGetSettings(sendResponse) {
   });
 }
 
+async function handleGetLogs(sendResponse) {
+  const logs = await readLogs();
+
+  sendResponse({
+    ok: true,
+    logs,
+  });
+}
+
+async function handleAppendLog(message, sendResponse) {
+  const logs = await appendLog(message.entry);
+
+  sendResponse({
+    ok: true,
+    logs,
+  });
+}
+
+async function handleClearLogs(sendResponse) {
+  const logs = await writeLogs([]);
+
+  sendResponse({
+    ok: true,
+    logs,
+  });
+}
+
 async function handleSaveSettings(message, sendResponse) {
   const next = await writeSettings({
     apiBaseUrl: normalizeApiBaseUrl(message.apiBaseUrl),
     userEmail: String(message.userEmail ?? "")
       .trim()
       .toLowerCase(),
+  });
+
+  await logExtensionEvent({
+    source: "configuracao",
+    level: "success",
+    message: "Configuração base da extensão salva.",
+    details: [
+      `API: ${next.apiBaseUrl || "Não informada"}`,
+      `E-mail: ${next.userEmail || "Não informado"}`,
+    ],
   });
 
   sendResponse({
@@ -328,6 +425,12 @@ async function handleClearSession(sendResponse) {
   const next = await writeSettings({
     accessToken: "",
     lastImportSummary: "",
+  });
+
+  await logExtensionEvent({
+    source: "sessao",
+    level: "warning",
+    message: "Sessão local da extensão foi limpa.",
   });
 
   sendResponse({
@@ -351,6 +454,16 @@ async function handleAuthenticate(message, sendResponse) {
     apiBaseUrl,
     userEmail: email,
     accessToken,
+  });
+
+  await logExtensionEvent({
+    source: "autenticacao",
+    level: "success",
+    message: "Sessão autenticada ou renovada com sucesso.",
+    details: [
+      `API: ${apiBaseUrl}`,
+      `E-mail: ${email || "Não informado"}`,
+    ],
   });
 
   sendResponse({
@@ -406,6 +519,19 @@ async function handleImport(message, sendResponse) {
       lastImportSummary: summary,
     });
 
+    await logExtensionEvent({
+      source: "importacao",
+      level: result.result === "created" ? "success" : "warning",
+      message:
+        result.result === "created"
+          ? "OP importada com sucesso para o sistema destino."
+          : "A importação retornou duplicidade para a OP selecionada.",
+      details: [
+        `Ordem: ${message.payload?.orderNumber ?? "Não informada"}`,
+        `Id externo ERP: ${message.payload?.externalOrderId ?? "Não informado"}`,
+      ],
+    });
+
     sendResponse(result);
   } catch (error) {
     const messageText =
@@ -419,6 +545,16 @@ async function handleImport(message, sendResponse) {
       });
     }
 
+    await logExtensionEvent({
+      source: "importacao",
+      level: "error",
+      message: messageText,
+      details: Array.isArray(error?.details) ? error.details : [],
+    });
+    if (error && typeof error === "object") {
+      error.__alreadyLogged = true;
+    }
+
     throw error;
   }
 }
@@ -428,6 +564,15 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     switch (message?.type) {
       case "ERP_FLEX_GET_SETTINGS":
         await handleGetSettings(sendResponse);
+        return;
+      case "ERP_FLEX_GET_LOGS":
+        await handleGetLogs(sendResponse);
+        return;
+      case "ERP_FLEX_APPEND_LOG":
+        await handleAppendLog(message, sendResponse);
+        return;
+      case "ERP_FLEX_CLEAR_LOGS":
+        await handleClearLogs(sendResponse);
         return;
       case "ERP_FLEX_SAVE_SETTINGS":
         await handleSaveSettings(message, sendResponse);
@@ -448,6 +593,16 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         });
     }
   })().catch((error) => {
+    if (!error?.__alreadyLogged) {
+      void logExtensionEvent({
+        source: "background",
+        level: "error",
+        message:
+          error instanceof Error ? error.message : "Erro inesperado na extensão.",
+        details: Array.isArray(error?.details) ? error.details : [],
+      });
+    }
+
     sendResponse({
       ok: false,
       message:

@@ -72,7 +72,10 @@ input:focus-visible {
 
 .popup-sidebar {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
   padding: 16px 10px;
   background: rgba(4, 17, 40, 0.96);
   border-right: 1px solid rgba(82, 119, 183, 0.2);
@@ -645,6 +648,85 @@ img.traceability-icon {
   margin: 0;
   font-size: 12px;
   color: #c3d2ee;
+}
+
+.log-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.log-item {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid rgba(92, 129, 194, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.log-item__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  align-items: center;
+}
+
+.log-item__badge,
+.log-item__time {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.log-item__badge {
+  background: rgba(97, 132, 197, 0.2);
+  color: #e4edff;
+}
+
+.log-item__badge[data-level="error"] {
+  background: rgba(220, 38, 38, 0.18);
+  color: #ffc5c5;
+}
+
+.log-item__badge[data-level="success"] {
+  background: rgba(22, 163, 74, 0.18);
+  color: #a8ebbf;
+}
+
+.log-item__badge[data-level="warning"] {
+  background: rgba(245, 158, 11, 0.16);
+  color: #f7d583;
+}
+
+.log-item__time {
+  background: rgba(255, 255, 255, 0.08);
+  color: #bed0ee;
+}
+
+.log-item__message {
+  margin: 0;
+  font-size: 12px;
+  color: #f2f6ff;
+  font-weight: 600;
+}
+
+.log-item__details {
+  display: grid;
+  gap: 4px;
+}
+
+.log-item__detail {
+  margin: 0;
+  font-size: 11px;
+  color: #aec4ea;
+  word-break: break-word;
 }
 
 .popup-card--advanced {

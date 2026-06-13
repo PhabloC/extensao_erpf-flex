@@ -75,6 +75,8 @@ Projeto reduzido para as stacks ativas `front-end` (React/Vite) e `backend`, pre
 - Quando o endpoint do ERP retorna varias OPs, a extensao ainda pode assumir automaticamente o registro errado; a change request 033 torna a auto-selecao conservadora e exige escolha manual quando o match for ambiguo.
 - A quantidade na popup ainda estava seguindo a heuristica errada de milhar e misturando unidade na mesma linha; a change request 034 adapta o parsing ao padrao real do ERP e separa `Unidade de Medida`.
 - A criacao da OP na popup ainda carece de confirmacao final, blindagem contra clique duplo e tratamento visual claro de erro/sucesso; a change request 035 cobre esse fechamento operacional.
+- A barra lateral da popup ainda so expunha a engrenagem; a change request 036 adiciona o atalho para a pagina interna de logs e a trilha operacional local da extensao.
+- Os botoes da barra lateral ainda estavam centralizados verticalmente; a change request 037 alinha esses atalhos no topo da popup.
 
 ## Estrategia de execucao
 
@@ -122,6 +124,8 @@ Projeto reduzido para as stacks ativas `front-end` (React/Vite) e `backend`, pre
 - [done] `tasks/change-requests/033-evitar-auto-selecao-incorreta-de-op-na-extensao.md` - Evitar auto-selecao incorreta de OP quando a analise retornar varias ordens.
 - [done] `tasks/change-requests/034-separar-unidade-da-quantidade-na-popup-e-tratar-000-como-casas-decimais.md` - Separar unidade da quantidade na popup e tratar `,000`/`.000` como casas decimais.
 - [done] `tasks/change-requests/035-adicionar-confirmacao-anti-duplicidade-e-feedback-claro-na-criacao-da-op.md` - Adicionar confirmacao final, bloqueio de clique duplo e feedback claro na criacao da OP pelo popup da extensao.
+- [done] `tasks/change-requests/036-adicionar-botao-lateral-e-pagina-interna-de-logs-na-extensao.md` - Adicionar atalho lateral para logs e pagina interna de historico operacional da extensao.
+- [done] `tasks/change-requests/037-alinhar-botoes-da-barra-lateral-no-topo-da-popup.md` - Alinhar os botoes da barra lateral no topo da popup.
 - [done] `tasks/001-definir-contrato-e-modelo-de-ordem-de-producao.md` - Definir contrato OpenAPI e modelo funcional do MVP de Ordem de Producao.
 - [done] `tasks/005-estruturar-extensao-de-navegador-para-importacao-erp-flex.md` - Criar a extensao MVP para importar ordens do ERP Flex.
 - [blocked] `tasks/006-fechar-fluxo-de-rastreabilidade-e-validacao-fim-a-fim.md` - Consolidar rastreabilidade da origem ERP e validar o fluxo ponta a ponta.
@@ -187,6 +191,8 @@ Projeto reduzido para as stacks ativas `front-end` (React/Vite) e `backend`, pre
 - `tasks/change-requests/033-evitar-auto-selecao-incorreta-de-op-na-extensao.md`: depende de `tasks/change-requests/032-corrigir-leitura-de-quantidade-com-milhar-na-extensao.md` e impede que a popup assuma uma OP arbitraria quando o endpoint retorna varias ordens sem match confiavel com a tela atual.
 - `tasks/change-requests/034-separar-unidade-da-quantidade-na-popup-e-tratar-000-como-casas-decimais.md`: depende de `tasks/change-requests/033-evitar-auto-selecao-incorreta-de-op-na-extensao.md` e ajusta a exibicao para o padrao real do ERP, em que `,000` e `.000` representam casas decimais zeradas e a unidade deve aparecer em linha propria.
 - `tasks/change-requests/035-adicionar-confirmacao-anti-duplicidade-e-feedback-claro-na-criacao-da-op.md`: depende de `tasks/change-requests/028-adicionar-botao-de-fazer-analise-para-buscar-ops-do-erp.md`, `tasks/change-requests/033-evitar-auto-selecao-incorreta-de-op-na-extensao.md` e `tasks/change-requests/034-separar-unidade-da-quantidade-na-popup-e-tratar-000-como-casas-decimais.md`, fechando a etapa final de criacao com confirmacao, bloqueio de reenvio e feedback operacional claro.
+- `tasks/change-requests/036-adicionar-botao-lateral-e-pagina-interna-de-logs-na-extensao.md`: depende de `tasks/change-requests/024-redesenhar-popup-com-layout-lateral-e-paleta-escura.md`, `tasks/change-requests/025-fazer-engrenagem-abrir-diretamente-a-configuracao-da-api.md` e `tasks/change-requests/035-adicionar-confirmacao-anti-duplicidade-e-feedback-claro-na-criacao-da-op.md`, adicionando o novo atalho lateral e a pagina interna de logs sem quebrar a navegacao existente.
+- `tasks/change-requests/037-alinhar-botoes-da-barra-lateral-no-topo-da-popup.md`: depende de `tasks/change-requests/024-redesenhar-popup-com-layout-lateral-e-paleta-escura.md` e `tasks/change-requests/036-adicionar-botao-lateral-e-pagina-interna-de-logs-na-extensao.md`, refinando o posicionamento vertical da navegacao secundaria da popup.
 
 ## Duvidas para validacao humana
 

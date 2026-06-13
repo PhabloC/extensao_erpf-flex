@@ -9,11 +9,13 @@ const requiredFiles = [
   'manifest.json',
   'popup.html',
   'advanced-settings.html',
+  'logs.html',
   'popup.css',
   'src/background.js',
   'src/content-script.js',
   'src/popup.js',
   'src/advanced-settings.js',
+  'src/logs.js',
 ];
 
 for (const relativePath of requiredFiles) {

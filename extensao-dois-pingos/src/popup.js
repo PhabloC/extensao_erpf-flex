@@ -7,6 +7,7 @@ const loadPreviewButton = document.getElementById("load-preview-button");
 const openAdvancedSettingsButton = document.getElementById(
   "open-advanced-settings-button",
 );
+const openLogsButton = document.getElementById("open-logs-button");
 const issueDateFromInput = document.getElementById("issue-date-from");
 const issueDateToInput = document.getElementById("issue-date-to");
 const orderSelectorSection = document.getElementById("order-selector-section");
@@ -126,6 +127,13 @@ const MOCK_PREVIEW_OPTIONS = [
 
 function sendRuntimeMessage(message) {
   return chrome.runtime.sendMessage(message);
+}
+
+function appendExtensionLog(entry) {
+  return sendRuntimeMessage({
+    type: "ERP_FLEX_APPEND_LOG",
+    entry,
+  }).catch(() => undefined);
 }
 
 function normalizeText(value) {
@@ -410,14 +418,8 @@ function updateImportActionState() {
     confirmImportButton,
     !hasPayload || state.isSubmittingImport,
   );
-  setElementDisabled(
-    cancelConfirmationButton,
-    state.isSubmittingImport,
-  );
-  setElementDisabled(
-    dismissConfirmationButton,
-    state.isSubmittingImport,
-  );
+  setElementDisabled(cancelConfirmationButton, state.isSubmittingImport);
+  setElementDisabled(dismissConfirmationButton, state.isSubmittingImport);
   setElementDisabled(
     orderSelectorTrigger,
     state.isSubmittingImport || hasMultipleOrders === false,
@@ -436,6 +438,7 @@ function setBusy(isBusy, options = {}) {
   setElementDisabled(reviewButton, isBusy);
   setElementDisabled(loadPreviewButton, isBusy);
   setElementDisabled(openAdvancedSettingsButton, isBusy);
+  setElementDisabled(openLogsButton, isBusy);
   setElementDisabled(issueDateFromInput, isBusy);
   setElementDisabled(issueDateToInput, isBusy);
   setElementText(reviewButton, isBusy ? reviewBusyLabel : reviewIdleLabel);
@@ -507,10 +510,7 @@ function buildDerivedSnapshot(payload) {
       normalizeText(payload?.item?.productCode),
     customerName: normalizeText(candidates.customerName),
     productBase: baseProduct,
-    variations:
-      explicitVariations ||
-      variationPieces.join(" | ") ||
-      "",
+    variations: explicitVariations || variationPieces.join(" | ") || "",
     notes:
       normalizeText(candidates.complementaryFields) ||
       normalizeText(payload?.notes),
@@ -594,7 +594,7 @@ function buildSettingsMissingDetails(settings) {
       "E-mail configurado",
       normalizeText(settings.userEmail) || "Não informado",
     ),
-    'Abra a engrenagem para preencher os dados da API do sistema destino.',
+    "Abra a engrenagem para preencher os dados da API do sistema destino.",
   ];
 }
 
@@ -603,9 +603,7 @@ function normalizeFeedbackDetails(details) {
     return [];
   }
 
-  return details
-    .map((detail) => normalizeText(detail))
-    .filter(Boolean);
+  return details.map((detail) => normalizeText(detail)).filter(Boolean);
 }
 
 function buildImportErrorFeedback(errorLike, settings = {}) {
@@ -639,8 +637,7 @@ function buildImportErrorFeedback(errorLike, settings = {}) {
 
   if (/failed to fetch|networkerror|network error/i.test(normalizedMessage)) {
     return {
-      message:
-        "A extensão não conseguiu alcançar a API do sistema destino.",
+      message: "A extensão não conseguiu alcançar a API do sistema destino.",
       details: [
         formatDetailLabel(
           "API configurada",
@@ -811,6 +808,17 @@ function loadMockPreview() {
     ],
     "success",
   );
+  void appendExtensionLog({
+    source: "popup",
+    level: "info",
+    message: "Preview visual mockado carregado na popup.",
+    details: [
+      formatDetailLabel(
+        "Ordens encontradas",
+        String(state.currentPayloadOptions.length),
+      ),
+    ],
+  });
 }
 
 async function handleReviewData() {
@@ -847,6 +855,14 @@ async function handleReviewData() {
   } catch (error) {
     state.currentPayload = null;
     clearCapturedData();
+    void appendExtensionLog({
+      source: "popup",
+      level: "error",
+      message:
+        error instanceof Error
+          ? error.message
+          : "Falha ao analisar os dados do ERP.",
+    });
     renderFeedback(
       error instanceof Error
         ? error.message
@@ -942,6 +958,13 @@ async function collectOrderPreview() {
     }
 
     setMappingState("error", "Revisar captura");
+    void appendExtensionLog({
+      source: "Análise",
+      level: "warning",
+      message:
+        response?.message ?? "A página atual não retornou dados válidos.",
+      details,
+    });
     renderFeedback(
       response?.message ?? "A página atual não retornou dados válidos.",
       details,
@@ -992,6 +1015,13 @@ async function collectOrderPreview() {
   }
 
   if (response?.extractionMeta?.requiresExplicitSelection) {
+    void appendExtensionLog({
+      source: "Análise",
+      level: "warning",
+      message:
+        "A análise encontrou múltiplas OPs e exige seleção manual antes da importação.",
+      details,
+    });
     renderFeedback(
       "A análise encontrou várias OPs e não conseguiu confirmar automaticamente qual corresponde à tela atual. Selecione a ordem correta na lista antes de importar.",
       details,
@@ -999,6 +1029,12 @@ async function collectOrderPreview() {
     );
     setMappingState("warning", "Selecionar OP");
   } else {
+    void appendExtensionLog({
+      source: "Análise",
+      level: "success",
+      message: "Análise da página concluída com sucesso.",
+      details,
+    });
     renderFeedback(
       "Análise concluída. Revise a OP encontrada e siga para a criação no kanban.",
       details,
@@ -1049,6 +1085,12 @@ function buildImportFeedback(result) {
 
 function openImportConfirmation() {
   if (!state.currentPayload) {
+    void appendExtensionLog({
+      source: "importacao",
+      level: "warning",
+      message:
+        "Tentativa de abrir a confirmação de importação sem payload capturado.",
+    });
     renderFeedback(
       "Faça a análise da página atual antes de criar a OP no kanban.",
       [],
@@ -1061,6 +1103,11 @@ function openImportConfirmation() {
   state.lastFocusedElementBeforeConfirmation = document.activeElement;
   renderImportConfirmation(state.currentPayload);
   setImportConfirmationOpen(true, { restoreFocus: false });
+  void appendExtensionLog({
+    source: "importacao",
+    level: "info",
+    message: "Confirmação final de importação aberta na popup.",
+  });
   renderFeedback(
     "Confirme os dados da OP selecionada antes de enviar para o sistema destino.",
   );
@@ -1127,6 +1174,12 @@ async function handleImportConfirmation() {
           }));
     const feedback = buildImportErrorFeedback(error, settingsFallback);
     state.importButtonMode = "idle";
+    void appendExtensionLog({
+      source: "importacao",
+      level: "error",
+      message: feedback.message,
+      details: feedback.details,
+    });
     renderFeedback(feedback.message, feedback.details, feedback.tone);
   } finally {
     setBusy(false, { importBusy: false });
@@ -1143,6 +1196,12 @@ async function bootstrapPopup() {
   } catch (error) {
     clearCapturedData();
     setBusy(false);
+    void appendExtensionLog({
+      source: "popup",
+      level: "error",
+      message:
+        error instanceof Error ? error.message : "Falha ao iniciar a extensão.",
+    });
     renderFeedback(
       error instanceof Error ? error.message : "Falha ao iniciar a extensão.",
       [],
@@ -1202,6 +1261,12 @@ function selectOrderPayloadByKey(selectionKey) {
     details,
     "success",
   );
+  void appendExtensionLog({
+    source: "popup",
+    level: "info",
+    message: "OP selecionada manualmente na lista da popup.",
+    details,
+  });
   setBusy(false);
   setOrderPickerOpen(false);
 
@@ -1255,7 +1320,21 @@ bindClick(loadPreviewButton, () => {
 });
 
 bindClick(openAdvancedSettingsButton, () => {
+  void appendExtensionLog({
+    source: "Navegação",
+    level: "info",
+    message: "Navegação para a configuração avançada iniciada pela popup.",
+  });
   window.location.href = "advanced-settings.html";
+});
+
+bindClick(openLogsButton, () => {
+  void appendExtensionLog({
+    source: "Navegação",
+    level: "info",
+    message: "Navegação para a página de logs iniciada pela popup.",
+  });
+  window.location.href = "logs.html";
 });
 
 document.addEventListener("keydown", (event) => {

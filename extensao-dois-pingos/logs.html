@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Logs da extensão</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="popup-shell">
+      <section class="popup-card popup-card--advanced">
+        <header class="popup-header popup-header--advanced">
+          <button
+            id="back-to-popup-button"
+            class="icon-button icon-button--leading"
+            type="button"
+            aria-label="Voltar para a tela principal"
+          >
+            <span aria-hidden="true">&#8592;</span>
+          </button>
+
+          <div class="brand-lockup">
+            <img
+              class="brand-logo"
+              src="assets/icons/logo-48.png"
+              alt="Logo Dois Pingos"
+              width="40"
+              height="40"
+            />
+            <div class="brand-copy">
+              <p class="brand-kicker">Dois Pingos</p>
+              <h1>Logs da extensão</h1>
+            </div>
+          </div>
+        </header>
+
+        <section class="advanced-page-section" aria-labelledby="logs-title">
+          <h2 id="logs-title">Histórico operacional recente</h2>
+          <p class="feedback-hint">
+            Eventos locais de análise, configuração, autenticação e importação
+            salvos neste navegador.
+          </p>
+        </section>
+
+        <section class="feedback-panel" aria-labelledby="logs-feedback-title">
+          <h2 id="logs-feedback-title" class="sr-only">Feedback operacional</h2>
+          <p
+            id="status-message"
+            class="feedback-message"
+            role="status"
+            aria-live="polite"
+          >
+            Carregando logs da extensão...
+          </p>
+          <div id="status-details" class="feedback-details" hidden></div>
+        </section>
+
+        <section class="advanced-page-section" aria-labelledby="log-list-title">
+          <h2 id="log-list-title">Entradas</h2>
+          <ul id="log-list" class="log-list" aria-live="polite"></ul>
+        </section>
+
+        <div class="actions">
+          <button
+            id="refresh-logs-button"
+            type="button"
+            class="action-button action-button--primary"
+          >
+            Atualizar logs
+          </button>
+          <button
+            id="clear-logs-button"
+            type="button"
+            class="action-button action-button--secondary"
+          >
+            Limpar logs
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <script src="src/logs.js"></script>
+  </body>
+</html>

@@ -8,6 +8,7 @@ Extensao MV3 para importar uma Ordem de Producao aberta no ERP Flex para o backe
 - `assets/icons/`: icones gerados da marca do produto para uso nativo da extensao.
 - `popup.html` e `popup.css`: popup principal de conferencia da OP, status de mapeamento e configuracoes da extensao.
 - `advanced-settings.html` e `src/advanced-settings.js`: pagina interna para configuracao da API, autenticacao e sessao.
+- `logs.html` e `src/logs.js`: pagina interna para consulta e limpeza dos logs operacionais locais da extensao.
 - `src/content-script.js`: reconhecimento da pagina e coleta dos campos da ordem.
 - `src/background.js`: login no sistema destino, persistencia de token e chamada ao endpoint de importacao.
 - `src/popup.js`: orquestracao da UI da extensao.
@@ -63,6 +64,11 @@ npm run check
 - `Carregar preview visual`: injeta um estado mockado para revisar o layout.
 - `Configuracao avancada`: abre uma pagina interna da extensao para configurar API, e-mail, senha, sessao e renovacao de token.
 
+## Funcoes da lateral
+
+- `Engrenagem`: abre a pagina interna de configuracao avancada.
+- `Logs`: abre a pagina interna de logs locais da extensao, com atualizacao e limpeza do historico recente.
+
 Se a extensao tiver sido recarregada com a pagina do ERP ja aberta, `Fazer analise` tenta reinjetar automaticamente o coletor na aba antes de falhar. Quando a aba nao puder receber scripts, a popup passa a orientar recarga da pagina suportada em vez de mostrar a mensagem crua do navegador.
 
 ## Validacao manual fim a fim
@@ -77,6 +83,7 @@ Se a extensao tiver sido recarregada com a pagina do ERP ja aberta, `Fazer anali
 ## Rastreabilidade operacional entregue
 
 - A extensao persiste um resumo da ultima importacao para conferencia rapida.
+- A extensao tambem persiste logs operacionais locais para diagnostico rapido pela pagina interna de logs.
 - O backend registra um snapshot bruto do payload coletado para auditoria tecnica.
 - O front-end exibe origem, id externo, URL de origem, usuario importador e detalhes do evento de importacao.
 
