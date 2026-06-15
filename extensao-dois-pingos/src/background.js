@@ -12,6 +12,77 @@ function createExtensionError(message, options = {}) {
   return error;
 }
 
+function normalizeText(value) {
+  return String(value ?? "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function translateKnownApiText(text) {
+  const normalized = normalizeText(text);
+
+  if (!normalized) {
+    return "";
+  }
+
+  if (/^Request payload is invalid\.$/i.test(normalized)) {
+    return "Os dados enviados pela extensão foram rejeitados pela API.";
+  }
+
+  if (
+    /^No registered variation was found for the provided product code\.$/i.test(
+      normalized,
+    )
+  ) {
+    return "Nenhuma variação cadastrada foi encontrada para o código de produto informado.";
+  }
+
+  return normalized;
+}
+
+function translateKnownApiDetail(detail) {
+  const normalized = normalizeText(detail);
+
+  if (!normalized) {
+    return "";
+  }
+
+  const [field, ...rest] = normalized.split(":");
+  if (rest.length === 0) {
+    return translateKnownApiText(normalized);
+  }
+
+  const translatedTail = translateKnownApiText(rest.join(":"));
+
+  return translatedTail ? `${field.trim()}: ${translatedTail}` : normalized;
+}
+
+function hasVariationLookupFailure(message, details = []) {
+  const haystack = [message, ...details].map((entry) => normalizeText(entry));
+
+  return haystack.some((entry) => {
+    return /no registered variation was found for the provided product code/i.test(
+      entry,
+    );
+  });
+}
+
+function hasNonWhitelistedPropertyError(details = []) {
+  return details.some((entry) => {
+    return /should not exist|property .* should not exist/i.test(
+      normalizeText(entry),
+    );
+  });
+}
+
+function buildFriendlyImportMessage(message, details = []) {
+  if (hasVariationLookupFailure(message, details)) {
+    return "A API não encontrou uma variação cadastrada compatível com o código do produto enviado.";
+  }
+
+  return translateKnownApiText(message);
+}
+
 function normalizeErrorDetails(details) {
   if (!Array.isArray(details)) {
     return [];
@@ -20,7 +91,7 @@ function normalizeErrorDetails(details) {
   return details
     .map((entry) => {
       if (typeof entry === "string") {
-        return entry.trim();
+        return translateKnownApiDetail(entry);
       }
 
       if (!entry || typeof entry !== "object") {
@@ -31,10 +102,10 @@ function normalizeErrorDetails(details) {
       const message = String(entry.message ?? entry.error ?? "").trim();
 
       if (field && message) {
-        return `${field}: ${message}`;
+        return translateKnownApiDetail(`${field}: ${message}`);
       }
 
-      return field || message;
+      return translateKnownApiDetail(field || message);
     })
     .filter(Boolean);
 }
@@ -101,7 +172,7 @@ function buildLogEntry(entry = {}) {
     createdAt: new Date().toISOString(),
     source: String(entry.source ?? "extensao").trim() || "extensao",
     level: String(entry.level ?? "info").trim().toLowerCase() || "info",
-    message: String(entry.message ?? "Evento sem descricao.").trim(),
+    message: String(entry.message ?? "Evento sem descrição.").trim(),
     details: normalizeLogDetails(entry.details),
   };
 }
@@ -248,6 +319,28 @@ function buildImportPayloadForApi(payload) {
     apiPayload.sourcePageUrl = payload.sourcePageUrl;
   }
 
+  const sanitizedRawPayload = sanitizeRawPayloadForApi(payload.rawPayload);
+
+  if (sanitizedRawPayload) {
+    apiPayload.rawPayload = sanitizedRawPayload;
+  }
+
+  return apiPayload;
+}
+
+function buildCompatibilityImportPayloadForApi(payload) {
+  const apiPayload = buildImportPayloadForApi(payload);
+
+  if (!payload || typeof payload !== "object") {
+    return apiPayload;
+  }
+
+  const candidates =
+    payload.rawPayload?.candidates &&
+    typeof payload.rawPayload.candidates === "object"
+      ? payload.rawPayload.candidates
+      : {};
+
   if (hasUsableValue(candidates.customerName)) {
     apiPayload.customerName = candidates.customerName;
   }
@@ -263,13 +356,70 @@ function buildImportPayloadForApi(payload) {
     apiPayload.complementaryFields = complementaryFields;
   }
 
-  const sanitizedRawPayload = sanitizeRawPayloadForApi(payload.rawPayload);
+  return apiPayload;
+}
 
-  if (sanitizedRawPayload) {
-    apiPayload.rawPayload = sanitizedRawPayload;
+async function postImportPayload({ apiBaseUrl, accessToken, payload }) {
+  const response = await fetch(
+    `${apiBaseUrl}/production-orders/imports/erp-flex`,
+    {
+      method: "POST",
+      headers: buildRequestHeaders(accessToken),
+      body: JSON.stringify(payload),
+    },
+  );
+
+  const data = await readJsonSafely(response);
+
+  return {
+    response,
+    data,
+  };
+}
+
+function resolveImportResponse({ response, data, payload }) {
+  if (response.ok && data?.result === "created") {
+    return {
+      ok: true,
+      result: "created",
+      productionOrder: data.productionOrder ?? null,
+    };
   }
 
-  return apiPayload;
+  if (response.status === 409 && data?.result === "duplicate") {
+    return {
+      ok: true,
+      result: "duplicate",
+      message: data.message ?? "A ordem já foi importada anteriormente.",
+      existingProductionOrderId: data.existingProductionOrderId ?? null,
+      externalOrderId: data.externalOrderId ?? payload.externalOrderId,
+    };
+  }
+
+  if (response.status === 401) {
+    throw createExtensionError(
+      "Sua sessão no sistema expirou. Informe a senha novamente para renovar o token.",
+      {
+        statusCode: response.status,
+        code: data?.code ?? "AUTHENTICATION_REQUIRED",
+        details: normalizeErrorDetails(data?.details),
+      },
+    );
+  }
+
+  const details = normalizeErrorDetails(data?.details);
+
+  throw createExtensionError(
+    buildFriendlyImportMessage(
+      data?.message ?? "Falha ao importar a ordem para o backend.",
+      details,
+    ),
+    {
+      statusCode: response.status,
+      code: data?.code ?? "IMPORT_FAILED",
+      details,
+    },
+  );
 }
 
 async function loginWithCredentials({ apiBaseUrl, email, password }) {
@@ -311,54 +461,59 @@ async function loginWithCredentials({ apiBaseUrl, email, password }) {
 }
 
 async function importProductionOrder({ apiBaseUrl, accessToken, payload }) {
-  const response = await fetch(
-    `${apiBaseUrl}/production-orders/imports/erp-flex`,
-    {
-      method: "POST",
-      headers: buildRequestHeaders(accessToken),
-      body: JSON.stringify(payload),
-    },
-  );
+  const primaryAttempt = await postImportPayload({
+    apiBaseUrl,
+    accessToken,
+    payload,
+  });
+  const primaryDetails = normalizeErrorDetails(primaryAttempt.data?.details);
+  const shouldRetryWithCompatibilityPayload =
+    primaryAttempt.response.status === 400 &&
+    hasVariationLookupFailure(primaryAttempt.data?.message, primaryDetails);
 
-  const data = await readJsonSafely(response);
-
-  if (response.ok && data?.result === "created") {
-    return {
-      ok: true,
-      result: "created",
-      productionOrder: data.productionOrder ?? null,
-    };
-  }
-
-  if (response.status === 409 && data?.result === "duplicate") {
-    return {
-      ok: true,
-      result: "duplicate",
-      message: data.message ?? "A ordem já foi importada anteriormente.",
-      existingProductionOrderId: data.existingProductionOrderId ?? null,
-      externalOrderId: data.externalOrderId ?? payload.externalOrderId,
-    };
-  }
-
-  if (response.status === 401) {
-    throw createExtensionError(
-      "Sua sessão no sistema expirou. Informe a senha novamente para renovar o token.",
-      {
-        statusCode: response.status,
-        code: data?.code ?? "AUTHENTICATION_REQUIRED",
-        details: normalizeErrorDetails(data?.details),
-      },
+  if (shouldRetryWithCompatibilityPayload) {
+    const compatibilityPayload = buildCompatibilityImportPayloadForApi(payload);
+    const compatibilityAttempt = await postImportPayload({
+      apiBaseUrl,
+      accessToken,
+      payload: compatibilityPayload,
+    });
+    const compatibilityDetails = normalizeErrorDetails(
+      compatibilityAttempt.data?.details,
     );
+
+    if (
+      compatibilityAttempt.response.ok ||
+      compatibilityAttempt.response.status === 409 ||
+      compatibilityAttempt.response.status === 401
+    ) {
+      return resolveImportResponse({
+        response: compatibilityAttempt.response,
+        data: compatibilityAttempt.data,
+        payload: compatibilityPayload,
+      });
+    }
+
+    if (hasNonWhitelistedPropertyError(compatibilityDetails)) {
+      return resolveImportResponse({
+        response: primaryAttempt.response,
+        data: primaryAttempt.data,
+        payload,
+      });
+    }
+
+    return resolveImportResponse({
+      response: compatibilityAttempt.response,
+      data: compatibilityAttempt.data,
+      payload: compatibilityPayload,
+    });
   }
 
-  throw createExtensionError(
-    data?.message ?? "Falha ao importar a ordem para o backend.",
-    {
-      statusCode: response.status,
-      code: data?.code ?? "IMPORT_FAILED",
-      details: normalizeErrorDetails(data?.details),
-    },
-  );
+  return resolveImportResponse({
+    response: primaryAttempt.response,
+    data: primaryAttempt.data,
+    payload,
+  });
 }
 
 async function handleGetSettings(sendResponse) {

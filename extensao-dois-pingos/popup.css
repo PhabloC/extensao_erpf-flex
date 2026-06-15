@@ -667,6 +667,12 @@ img.traceability-icon {
   background: rgba(255, 255, 255, 0.04);
 }
 
+.log-item--error {
+  border-color: rgba(220, 38, 38, 0.38);
+  background: rgba(220, 38, 38, 0.1);
+  box-shadow: inset 3px 0 0 rgba(248, 113, 113, 0.9);
+}
+
 .log-item__meta {
   display: flex;
   flex-wrap: wrap;
@@ -715,6 +721,10 @@ img.traceability-icon {
   font-size: 12px;
   color: #f2f6ff;
   font-weight: 600;
+}
+
+.log-item--error .log-item__message {
+  color: #ffe0e0;
 }
 
 .log-item__details {

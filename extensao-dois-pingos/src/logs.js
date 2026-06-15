@@ -80,6 +80,36 @@ function isProductionOrderCreationLog(entry) {
   return normalizeText(entry?.source).toLowerCase() === "importacao";
 }
 
+function getLogLevel(entry) {
+  return normalizeText(entry?.level).toLowerCase() || "info";
+}
+
+function formatLogSourceLabel(source) {
+  const normalized = normalizeText(source).toLowerCase();
+
+  if (normalized === "importacao") {
+    return "Importação";
+  }
+
+  return normalizeText(source) || "extensão";
+}
+
+function formatLogLevelLabel(level) {
+  if (level === "error") {
+    return "Erro";
+  }
+
+  if (level === "success") {
+    return "Sucesso";
+  }
+
+  if (level === "warning") {
+    return "Alerta";
+  }
+
+  return "Info";
+}
+
 function buildEmptyState() {
   const item = document.createElement("li");
   item.className = "log-item";
@@ -96,24 +126,36 @@ function buildEmptyState() {
 function buildLogItem(entry) {
   const item = document.createElement("li");
   item.className = "log-item";
+  const level = getLogLevel(entry);
+
+  if (level === "error") {
+    item.classList.add("log-item--error");
+  }
 
   const meta = document.createElement("div");
   meta.className = "log-item__meta";
 
   const sourceBadge = document.createElement("span");
   sourceBadge.className = "log-item__badge";
-  sourceBadge.dataset.level = normalizeText(entry.level).toLowerCase() || "info";
-  sourceBadge.textContent = normalizeText(entry.source) || "extensao";
+  sourceBadge.textContent = formatLogSourceLabel(entry.source);
+
+  const levelBadge = document.createElement("span");
+  levelBadge.className = "log-item__badge";
+  levelBadge.dataset.level = level;
+  levelBadge.textContent = formatLogLevelLabel(level);
 
   const time = document.createElement("span");
   time.className = "log-item__time";
   time.textContent = formatTimestamp(entry.createdAt);
 
-  meta.append(sourceBadge, time);
+  meta.append(sourceBadge, levelBadge, time);
 
   const message = document.createElement("p");
   message.className = "log-item__message";
-  message.textContent = normalizeText(entry.message) || "Evento sem descricao.";
+  message.textContent =
+    level === "error"
+      ? `Erro: ${normalizeText(entry.message) || "Evento sem descrição."}`
+      : normalizeText(entry.message) || "Evento sem descrição.";
 
   item.append(meta, message);
 
@@ -152,7 +194,7 @@ function renderLogs(logs) {
 
 async function loadLogs() {
   setBusy(true, "Atualizando...");
-  renderFeedback("Carregando logs de criacao de OP...");
+  renderFeedback("Carregando logs de criação de OP...");
 
   try {
     const response = await sendRuntimeMessage({
@@ -164,14 +206,20 @@ async function loadLogs() {
     }
 
     const filteredLogs = renderLogs(response.logs);
+    const errorCount = Array.isArray(filteredLogs)
+      ? filteredLogs.filter((entry) => getLogLevel(entry) === "error").length
+      : 0;
     renderFeedback(
       filteredLogs?.length
-        ? "Logs de criacao de OP carregados com sucesso."
-        : "Nenhum log de criacao de OP foi salvo ainda neste navegador.",
+        ? errorCount
+          ? "Logs carregados. Existem erros de importação que exigem revisão."
+          : "Logs de criação de OP carregados com sucesso."
+        : "Nenhum log de criação de OP foi salvo ainda neste navegador.",
       [
         `Entradas: ${Array.isArray(filteredLogs) ? filteredLogs.length : 0}`,
+        `Erros: ${errorCount}`,
       ],
-      "success",
+      errorCount ? "error" : "success",
     );
   } catch (error) {
     logList.replaceChildren(buildEmptyState());

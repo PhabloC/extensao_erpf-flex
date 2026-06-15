@@ -78,6 +78,9 @@ Projeto reduzido para as stacks ativas `front-end` (React/Vite) e `backend`, pre
 - A barra lateral da popup ainda so expunha a engrenagem; a change request 036 adiciona o atalho para a pagina interna de logs e a trilha operacional local da extensao.
 - Os botoes da barra lateral ainda estavam centralizados verticalmente; a change request 037 alinha esses atalhos no topo da popup.
 - A pagina interna de logs ainda mistura eventos operacionais gerais; a change request 038 restringe a listagem ao historico de criacao de OP.
+- A extensao ainda envia campos top-level fora do contrato de importacao ERP; a change request 039 alinha o payload ao schema aceito pela API para evitar `Request payload is invalid.` em ambientes com validacao estrita.
+- A pagina de logs ainda nao destaca falhas de forma suficientemente obvia; a change request 040 reforca a leitura imediata dos eventos de erro.
+- A integracao em producao ainda pode devolver erros de variacao em ingles e com diagnostico fraco; a change request 041 traduz esses retornos e adiciona uma tentativa compativel com variacoes.
 
 ## Estrategia de execucao
 
@@ -128,6 +131,9 @@ Projeto reduzido para as stacks ativas `front-end` (React/Vite) e `backend`, pre
 - [done] `tasks/change-requests/036-adicionar-botao-lateral-e-pagina-interna-de-logs-na-extensao.md` - Adicionar atalho lateral para logs e pagina interna de historico operacional da extensao.
 - [done] `tasks/change-requests/037-alinhar-botoes-da-barra-lateral-no-topo-da-popup.md` - Alinhar os botoes da barra lateral no topo da popup.
 - [done] `tasks/change-requests/038-filtrar-pagina-de-logs-para-criacao-de-op.md` - Restringir a pagina interna de logs para exibir apenas eventos ligados a criacao de OP.
+- [done] `tasks/change-requests/039-alinhar-payload-da-extensao-ao-contrato-de-importacao.md` - Alinhar o payload da extensao ao schema aceito pela API de importacao ERP.
+- [done] `tasks/change-requests/040-destacar-erros-na-pagina-de-logs-da-extensao.md` - Destacar de forma mais clara os eventos de erro na pagina de logs da extensao.
+- [done] `tasks/change-requests/041-traduzir-erros-da-importacao-e-tentar-compatibilidade-com-variacoes.md` - Traduzir erros da importacao para PT-BR e tentar um reenvio compativel quando a API reclamar de variacao.
 - [done] `tasks/001-definir-contrato-e-modelo-de-ordem-de-producao.md` - Definir contrato OpenAPI e modelo funcional do MVP de Ordem de Producao.
 - [done] `tasks/005-estruturar-extensao-de-navegador-para-importacao-erp-flex.md` - Criar a extensao MVP para importar ordens do ERP Flex.
 - [blocked] `tasks/006-fechar-fluxo-de-rastreabilidade-e-validacao-fim-a-fim.md` - Consolidar rastreabilidade da origem ERP e validar o fluxo ponta a ponta.
@@ -196,6 +202,9 @@ Projeto reduzido para as stacks ativas `front-end` (React/Vite) e `backend`, pre
 - `tasks/change-requests/036-adicionar-botao-lateral-e-pagina-interna-de-logs-na-extensao.md`: depende de `tasks/change-requests/024-redesenhar-popup-com-layout-lateral-e-paleta-escura.md`, `tasks/change-requests/025-fazer-engrenagem-abrir-diretamente-a-configuracao-da-api.md` e `tasks/change-requests/035-adicionar-confirmacao-anti-duplicidade-e-feedback-claro-na-criacao-da-op.md`, adicionando o novo atalho lateral e a pagina interna de logs sem quebrar a navegacao existente.
 - `tasks/change-requests/037-alinhar-botoes-da-barra-lateral-no-topo-da-popup.md`: depende de `tasks/change-requests/024-redesenhar-popup-com-layout-lateral-e-paleta-escura.md` e `tasks/change-requests/036-adicionar-botao-lateral-e-pagina-interna-de-logs-na-extensao.md`, refinando o posicionamento vertical da navegacao secundaria da popup.
 - `tasks/change-requests/038-filtrar-pagina-de-logs-para-criacao-de-op.md`: depende de `tasks/change-requests/036-adicionar-botao-lateral-e-pagina-interna-de-logs-na-extensao.md` e `tasks/change-requests/037-alinhar-botoes-da-barra-lateral-no-topo-da-popup.md`, refinando a utilidade operacional da tela de logs com foco na criacao de OP.
+- `tasks/change-requests/039-alinhar-payload-da-extensao-ao-contrato-de-importacao.md`: depende de `tasks/change-requests/035-adicionar-confirmacao-anti-duplicidade-e-feedback-claro-na-criacao-da-op.md` e corrige o adaptador HTTP da extensao para respeitar estritamente o schema de importacao ERP em ambientes com `forbidNonWhitelisted`.
+- `tasks/change-requests/040-destacar-erros-na-pagina-de-logs-da-extensao.md`: depende de `tasks/change-requests/036-adicionar-botao-lateral-e-pagina-interna-de-logs-na-extensao.md` e `tasks/change-requests/038-filtrar-pagina-de-logs-para-criacao-de-op.md`, refinando a apresentacao do historico para explicitar falhas de importacao.
+- `tasks/change-requests/041-traduzir-erros-da-importacao-e-tentar-compatibilidade-com-variacoes.md`: depende de `tasks/change-requests/039-alinhar-payload-da-extensao-ao-contrato-de-importacao.md` e `tasks/change-requests/040-destacar-erros-na-pagina-de-logs-da-extensao.md`, refinando a integracao em producao com traducao dos erros e retry compativel orientado a variacoes.
 
 ## Duvidas para validacao humana
 
