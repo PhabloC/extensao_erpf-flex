@@ -76,13 +76,18 @@ function normalizeDetails(details) {
   return details.map((detail) => normalizeText(detail)).filter(Boolean);
 }
 
+function isProductionOrderCreationLog(entry) {
+  return normalizeText(entry?.source).toLowerCase() === "importacao";
+}
+
 function buildEmptyState() {
   const item = document.createElement("li");
   item.className = "log-item";
 
   const message = document.createElement("p");
   message.className = "log-item__message";
-  message.textContent = "Nenhum log salvo ainda neste navegador.";
+  message.textContent =
+    "Nenhum log de criacao de OP foi salvo ainda neste navegador.";
 
   item.append(message);
   return item;
@@ -131,20 +136,23 @@ function buildLogItem(entry) {
 }
 
 function renderLogs(logs) {
-  const entries = Array.isArray(logs) ? logs : [];
+  const entries = Array.isArray(logs)
+    ? logs.filter((entry) => isProductionOrderCreationLog(entry))
+    : [];
 
   if (!entries.length) {
     logList.replaceChildren(buildEmptyState());
-    return;
+    return entries;
   }
 
   const nodes = entries.map((entry) => buildLogItem(entry));
   logList.replaceChildren(...nodes);
+  return entries;
 }
 
 async function loadLogs() {
   setBusy(true, "Atualizando...");
-  renderFeedback("Carregando logs da extensão...");
+  renderFeedback("Carregando logs de criacao de OP...");
 
   try {
     const response = await sendRuntimeMessage({
@@ -155,13 +163,13 @@ async function loadLogs() {
       throw new Error(response?.message ?? "Falha ao carregar logs da extensão.");
     }
 
-    renderLogs(response.logs);
+    const filteredLogs = renderLogs(response.logs);
     renderFeedback(
-      response.logs?.length
-        ? "Logs carregados com sucesso."
-        : "Nenhum log salvo ainda neste navegador.",
+      filteredLogs?.length
+        ? "Logs de criacao de OP carregados com sucesso."
+        : "Nenhum log de criacao de OP foi salvo ainda neste navegador.",
       [
-        `Entradas: ${Array.isArray(response.logs) ? response.logs.length : 0}`,
+        `Entradas: ${Array.isArray(filteredLogs) ? filteredLogs.length : 0}`,
       ],
       "success",
     );
@@ -181,7 +189,7 @@ async function loadLogs() {
 
 async function handleClearLogs() {
   setBusy(true, "Limpando...");
-  renderFeedback("Limpando logs da extensão...");
+  renderFeedback("Limpando logs salvos da extensão...");
 
   try {
     const response = await sendRuntimeMessage({
