@@ -171,7 +171,10 @@ function buildLogEntry(entry = {}) {
   return {
     createdAt: new Date().toISOString(),
     source: String(entry.source ?? "extensao").trim() || "extensao",
-    level: String(entry.level ?? "info").trim().toLowerCase() || "info",
+    level:
+      String(entry.level ?? "info")
+        .trim()
+        .toLowerCase() || "info",
     message: String(entry.message ?? "Evento sem descrição.").trim(),
     details: normalizeLogDetails(entry.details),
   };
@@ -293,7 +296,8 @@ function buildImportPayloadForApi(payload) {
   }
 
   const candidates =
-    payload.rawPayload?.candidates && typeof payload.rawPayload.candidates === "object"
+    payload.rawPayload?.candidates &&
+    typeof payload.rawPayload.candidates === "object"
       ? payload.rawPayload.candidates
       : {};
 
@@ -425,7 +429,7 @@ function resolveImportResponse({ response, data, payload }) {
 async function loginWithCredentials({ apiBaseUrl, email, password }) {
   if (!email || !password) {
     throw createExtensionError(
-      "Sessao expirada. Informe e-mail e senha do sistema para renovar o token.",
+      "Sessão expirada. Informe e-mail e senha do sistema para renovar o token.",
       {
         code: "SESSION_REQUIRES_PASSWORD",
       },
@@ -615,10 +619,7 @@ async function handleAuthenticate(message, sendResponse) {
     source: "autenticacao",
     level: "success",
     message: "Sessão autenticada ou renovada com sucesso.",
-    details: [
-      `API: ${apiBaseUrl}`,
-      `E-mail: ${email || "Não informado"}`,
-    ],
+    details: [`API: ${apiBaseUrl}`, `E-mail: ${email || "Não informado"}`],
   });
 
   sendResponse({
@@ -753,7 +754,9 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         source: "background",
         level: "error",
         message:
-          error instanceof Error ? error.message : "Erro inesperado na extensão.",
+          error instanceof Error
+            ? error.message
+            : "Erro inesperado na extensão.",
         details: Array.isArray(error?.details) ? error.details : [],
       });
     }

@@ -1,6 +1,9 @@
 const apiBaseUrlInput = document.getElementById("api-base-url");
 const userEmailInput = document.getElementById("user-email");
 const userPasswordInput = document.getElementById("user-password");
+const togglePasswordVisibilityButton = document.getElementById(
+  "toggle-password-visibility-button",
+);
 const sessionSummary = document.getElementById("session-summary");
 const statusMessage = document.getElementById("status-message");
 const statusDetails = document.getElementById("status-details");
@@ -8,6 +11,7 @@ const saveSettingsButton = document.getElementById("save-settings-button");
 const authenticateButton = document.getElementById("authenticate-button");
 const clearSessionButton = document.getElementById("clear-session-button");
 const backToPopupButton = document.getElementById("back-to-popup-button");
+let isPasswordVisible = false;
 
 function sendRuntimeMessage(message) {
   return chrome.runtime.sendMessage(message);
@@ -66,17 +70,35 @@ function renderSession(settings) {
   sessionSummary.textContent = "Nenhuma sessão autenticada salva.";
 }
 
+function syncPasswordVisibility() {
+  userPasswordInput.type = isPasswordVisible ? "text" : "password";
+  togglePasswordVisibilityButton.setAttribute(
+    "aria-label",
+    isPasswordVisible ? "Ocultar senha" : "Mostrar senha",
+  );
+  togglePasswordVisibilityButton.setAttribute(
+    "aria-pressed",
+    String(isPasswordVisible),
+  );
+}
+
 function setBusy(isBusy, primaryLabel = "Salvar configuração") {
   saveSettingsButton.disabled = isBusy;
   authenticateButton.disabled = isBusy;
   clearSessionButton.disabled = isBusy;
   backToPopupButton.disabled = isBusy;
+  togglePasswordVisibilityButton.disabled = isBusy;
   apiBaseUrlInput.disabled = isBusy;
   userEmailInput.disabled = isBusy;
   userPasswordInput.disabled = isBusy;
   saveSettingsButton.textContent = isBusy
     ? primaryLabel
     : "Salvar configuração";
+}
+
+function hidePassword() {
+  isPasswordVisible = false;
+  syncPasswordVisibility();
 }
 
 async function loadSettings() {
@@ -146,6 +168,7 @@ async function handleAuthenticate() {
     }
 
     userPasswordInput.value = "";
+    hidePassword();
     renderSession(response.settings);
     renderFeedback("Sessão renovada com sucesso.", [], "success");
   } catch (error) {
@@ -175,6 +198,7 @@ async function handleClearSession() {
     }
 
     userPasswordInput.value = "";
+    hidePassword();
     renderSession(response.settings);
     renderFeedback(
       "Sessão local removida. Informe a senha novamente para renovar o token.",
@@ -198,9 +222,15 @@ function goBackToPopup() {
   window.location.href = "popup.html";
 }
 
+function handleTogglePasswordVisibility() {
+  isPasswordVisible = !isPasswordVisible;
+  syncPasswordVisibility();
+}
+
 async function bootstrapAdvancedSettings() {
   try {
     await loadSettings();
+    syncPasswordVisibility();
     setBusy(false);
   } catch (error) {
     setBusy(false);
@@ -224,6 +254,10 @@ authenticateButton.addEventListener("click", () => {
 
 clearSessionButton.addEventListener("click", () => {
   void handleClearSession();
+});
+
+togglePasswordVisibilityButton.addEventListener("click", () => {
+  handleTogglePasswordVisibility();
 });
 
 backToPopupButton.addEventListener("click", () => {

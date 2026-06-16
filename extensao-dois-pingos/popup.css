@@ -629,6 +629,55 @@ img.traceability-icon {
   color: #eef4ff;
 }
 
+.field-input-group {
+  position: relative;
+}
+
+.field-input-group input {
+  padding-right: 44px;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  margin: 0;
+  border: none;
+  border-radius: 7px;
+  padding: 0;
+  background: transparent;
+  color: #9db6e4;
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.password-toggle:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.password-toggle__icon {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.password-toggle__slash {
+  opacity: 1;
+}
+
+.password-toggle[aria-pressed="true"] .password-toggle__slash {
+  opacity: 0;
+}
+
 .field small {
   font-size: 11px;
   color: #93a9d0;
