@@ -82,6 +82,12 @@ Projeto reduzido para as stacks ativas `front-end` (React/Vite) e `backend`, pre
 - A pagina de logs ainda nao destaca falhas de forma suficientemente obvia; a change request 040 reforca a leitura imediata dos eventos de erro.
 - A integracao em producao ainda pode devolver erros de variacao em ingles e com diagnostico fraco; a change request 041 traduz esses retornos e adiciona uma tentativa compativel com variacoes.
 - A configuracao avancada ainda nao permite conferir visualmente a senha digitada; a change request 042 adiciona o controle de olho para exibir ou ocultar esse valor.
+- A configuracao avancada ainda exige digitacao repetitiva da URL da API; a change request 043 adiciona presets prontos para local e producao.
+- O modo alternativo de consulta do ERP ainda pode devolver OP valida no endpoint e mesmo assim ser rejeitado pela heuristica de pagina suportada; a change request 044 corrige essa deteccao.
+- Quando o modo alternativo do ERP devolve apenas uma OP, a heuristica ainda pode deixar a popup sem selecao principal; a change request 045 fecha essa auto-selecao.
+- O fluxo de analise ainda carece de visibilidade sobre o retorno bruto do coletor; a change request 046 expõe diagnostico operacional na popup e nos logs.
+- A configuracao avancada ainda permite editar manualmente a URL da API; a change request 047 restringe a troca aos presets de ambiente.
+- O campo readonly da URL ainda parece editavel no hover; a change request 048 ajusta cursor e contraste desse estado.
 
 ## Estrategia de execucao
 
@@ -136,6 +142,12 @@ Projeto reduzido para as stacks ativas `front-end` (React/Vite) e `backend`, pre
 - [done] `tasks/change-requests/040-destacar-erros-na-pagina-de-logs-da-extensao.md` - Destacar de forma mais clara os eventos de erro na pagina de logs da extensao.
 - [done] `tasks/change-requests/041-traduzir-erros-da-importacao-e-tentar-compatibilidade-com-variacoes.md` - Traduzir erros da importacao para PT-BR e tentar um reenvio compativel quando a API reclamar de variacao.
 - [done] `tasks/change-requests/042-adicionar-atalho-visual-para-exibir-ou-ocultar-senha-na-configuracao-avancada.md` - Adicionar o controle de olho para exibir ou ocultar a senha na configuracao avancada.
+- [done] `tasks/change-requests/043-predefinir-urls-de-api-local-e-producao-na-configuracao-avancada.md` - Predefinir URLs de API local e producao na configuracao avancada.
+- [done] `tasks/change-requests/044-aceitar-modo-alternativo-do-erp-quando-endpoint-retornar-ops-validas.md` - Aceitar modo alternativo do ERP quando o endpoint retornar OPs validas.
+- [done] `tasks/change-requests/045-auto-selecionar-op-unica-retornada-pelo-endpoint-do-erp.md` - Auto-selecionar OP unica retornada pelo endpoint do ERP.
+- [done] `tasks/change-requests/046-expor-diagnostico-da-analise-do-erp-nos-logs-da-popup.md` - Expor diagnostico da analise do ERP nos logs da popup.
+- [done] `tasks/change-requests/047-tornar-url-da-api-somente-leitura-com-selecao-por-presets.md` - Tornar URL da API somente leitura com selecao por presets.
+- [done] `tasks/change-requests/048-diferenciar-visualmente-o-input-readonly-da-url-da-api.md` - Diferenciar visualmente o input readonly da URL da API.
 - [done] `tasks/001-definir-contrato-e-modelo-de-ordem-de-producao.md` - Definir contrato OpenAPI e modelo funcional do MVP de Ordem de Producao.
 - [done] `tasks/005-estruturar-extensao-de-navegador-para-importacao-erp-flex.md` - Criar a extensao MVP para importar ordens do ERP Flex.
 - [blocked] `tasks/006-fechar-fluxo-de-rastreabilidade-e-validacao-fim-a-fim.md` - Consolidar rastreabilidade da origem ERP e validar o fluxo ponta a ponta.
@@ -208,6 +220,12 @@ Projeto reduzido para as stacks ativas `front-end` (React/Vite) e `backend`, pre
 - `tasks/change-requests/040-destacar-erros-na-pagina-de-logs-da-extensao.md`: depende de `tasks/change-requests/036-adicionar-botao-lateral-e-pagina-interna-de-logs-na-extensao.md` e `tasks/change-requests/038-filtrar-pagina-de-logs-para-criacao-de-op.md`, refinando a apresentacao do historico para explicitar falhas de importacao.
 - `tasks/change-requests/041-traduzir-erros-da-importacao-e-tentar-compatibilidade-com-variacoes.md`: depende de `tasks/change-requests/039-alinhar-payload-da-extensao-ao-contrato-de-importacao.md` e `tasks/change-requests/040-destacar-erros-na-pagina-de-logs-da-extensao.md`, refinando a integracao em producao com traducao dos erros e retry compativel orientado a variacoes.
 - `tasks/change-requests/042-adicionar-atalho-visual-para-exibir-ou-ocultar-senha-na-configuracao-avancada.md`: depende de `tasks/change-requests/030-mover-seta-de-voltar-para-o-canto-esquerdo-da-configuracao-avancada.md` e adiciona o controle visual de exibicao da senha sem alterar o fluxo de autenticacao.
+- `tasks/change-requests/043-predefinir-urls-de-api-local-e-producao-na-configuracao-avancada.md`: depende de `tasks/change-requests/042-adicionar-atalho-visual-para-exibir-ou-ocultar-senha-na-configuracao-avancada.md` e reduz a friccao operacional da tela avancada com presets de ambiente.
+- `tasks/change-requests/044-aceitar-modo-alternativo-do-erp-quando-endpoint-retornar-ops-validas.md`: depende de `tasks/change-requests/043-predefinir-urls-de-api-local-e-producao-na-configuracao-avancada.md` e corrige o reconhecimento de pagina suportada quando o endpoint estruturado do ERP ja devolve registros validos.
+- `tasks/change-requests/045-auto-selecionar-op-unica-retornada-pelo-endpoint-do-erp.md`: depende de `tasks/change-requests/044-aceitar-modo-alternativo-do-erp-quando-endpoint-retornar-ops-validas.md` e corrige a ausencia de payload principal quando o endpoint retorna uma unica OP sem pistas suficientes para score.
+- `tasks/change-requests/046-expor-diagnostico-da-analise-do-erp-nos-logs-da-popup.md`: depende de `tasks/change-requests/045-auto-selecionar-op-unica-retornada-pelo-endpoint-do-erp.md` e adiciona rastreabilidade operacional do retorno de `ERP_FLEX_COLLECT_ORDER`.
+- `tasks/change-requests/047-tornar-url-da-api-somente-leitura-com-selecao-por-presets.md`: depende de `tasks/change-requests/043-predefinir-urls-de-api-local-e-producao-na-configuracao-avancada.md` e restringe a troca de ambiente aos presets visuais.
+- `tasks/change-requests/048-diferenciar-visualmente-o-input-readonly-da-url-da-api.md`: depende de `tasks/change-requests/047-tornar-url-da-api-somente-leitura-com-selecao-por-presets.md` e reforca visualmente o estado nao editavel do campo.
 
 ## Duvidas para validacao humana
 

@@ -1,4 +1,7 @@
 const apiBaseUrlInput = document.getElementById("api-base-url");
+const apiPresetButtons = Array.from(
+  document.querySelectorAll("[data-api-base-url]"),
+);
 const userEmailInput = document.getElementById("user-email");
 const userPasswordInput = document.getElementById("user-password");
 const togglePasswordVisibilityButton = document.getElementById(
@@ -12,6 +15,18 @@ const authenticateButton = document.getElementById("authenticate-button");
 const clearSessionButton = document.getElementById("clear-session-button");
 const backToPopupButton = document.getElementById("back-to-popup-button");
 let isPasswordVisible = false;
+const DEFAULT_API_PRESETS = [
+  {
+    id: "production",
+    label: "Produção",
+    value: "https://api-dois-pingos.fasters.app/api",
+  },
+  {
+    id: "local",
+    label: "Local",
+    value: "http://localhost:3000",
+  },
+];
 
 function sendRuntimeMessage(message) {
   return chrome.runtime.sendMessage(message);
@@ -21,6 +36,34 @@ function normalizeText(value) {
   return String(value ?? "")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function normalizeApiBaseUrlForComparison(rawValue) {
+  const trimmed = String(rawValue ?? "").trim();
+
+  if (!trimmed) {
+    return "";
+  }
+
+  try {
+    const parsed = new URL(trimmed);
+    const normalizedPath = parsed.pathname.replace(/\/+$/, "");
+
+    if (!normalizedPath) {
+      parsed.pathname = "/api";
+    } else if (!normalizedPath.endsWith("/api")) {
+      parsed.pathname = `${normalizedPath}/api`;
+    } else {
+      parsed.pathname = normalizedPath;
+    }
+
+    parsed.search = "";
+    parsed.hash = "";
+
+    return parsed.toString().replace(/\/$/, "");
+  } catch {
+    return trimmed.replace(/\/+$/, "");
+  }
 }
 
 function setFeedbackTone(tone) {
@@ -82,12 +125,29 @@ function syncPasswordVisibility() {
   );
 }
 
+function syncApiPresetState() {
+  const normalizedCurrent = normalizeApiBaseUrlForComparison(
+    apiBaseUrlInput.value,
+  );
+
+  apiPresetButtons.forEach((button) => {
+    const presetValue = button.dataset.apiBaseUrl ?? "";
+    const isActive =
+      normalizeApiBaseUrlForComparison(presetValue) === normalizedCurrent;
+
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+}
+
 function setBusy(isBusy, primaryLabel = "Salvar configuração") {
   saveSettingsButton.disabled = isBusy;
   authenticateButton.disabled = isBusy;
   clearSessionButton.disabled = isBusy;
   backToPopupButton.disabled = isBusy;
   togglePasswordVisibilityButton.disabled = isBusy;
+  apiPresetButtons.forEach((button) => {
+    button.disabled = isBusy;
+  });
   apiBaseUrlInput.disabled = isBusy;
   userEmailInput.disabled = isBusy;
   userPasswordInput.disabled = isBusy;
@@ -113,6 +173,7 @@ async function loadSettings() {
   }
 
   apiBaseUrlInput.value = response.settings.apiBaseUrl ?? "";
+  syncApiPresetState();
   userEmailInput.value = response.settings.userEmail ?? "";
   renderSession(response.settings);
 
@@ -227,10 +288,16 @@ function handleTogglePasswordVisibility() {
   syncPasswordVisibility();
 }
 
+function applyApiPreset(rawValue) {
+  apiBaseUrlInput.value = rawValue;
+  syncApiPresetState();
+}
+
 async function bootstrapAdvancedSettings() {
   try {
     await loadSettings();
     syncPasswordVisibility();
+    syncApiPresetState();
     setBusy(false);
   } catch (error) {
     setBusy(false);
@@ -260,8 +327,24 @@ togglePasswordVisibilityButton.addEventListener("click", () => {
   handleTogglePasswordVisibility();
 });
 
+apiPresetButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    applyApiPreset(button.dataset.apiBaseUrl ?? "");
+  });
+});
+
 backToPopupButton.addEventListener("click", () => {
   goBackToPopup();
+});
+
+DEFAULT_API_PRESETS.forEach((preset) => {
+  const button = document.querySelector(
+    `[data-api-base-url="${preset.value}"]`,
+  );
+
+  if (button) {
+    button.textContent = preset.label;
+  }
 });
 
 void bootstrapAdvancedSettings();

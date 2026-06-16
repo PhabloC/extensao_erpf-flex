@@ -215,6 +215,120 @@ function formatDetailLabel(label, value) {
   return `${label}: ${value}`;
 }
 
+function formatBooleanLabel(value) {
+  return value ? "sim" : "nao";
+}
+
+function buildAnalysisDiagnosticDetails(response) {
+  const details = [];
+  const payloadOptions = Array.isArray(response?.payloadOptions)
+    ? response.payloadOptions
+    : [];
+  const missingFields = Array.isArray(response?.missingFields)
+    ? response.missingFields.filter(Boolean)
+    : [];
+  const extractionMeta = response?.extractionMeta ?? {};
+  const payloadPreview = response?.payloadPreview ?? null;
+  const selectedPayload = response?.payload ?? payloadPreview ?? null;
+  const selectedSnapshot = buildDerivedSnapshot(selectedPayload);
+
+  if (response?.code) {
+    details.push(formatDetailLabel("Codigo", response.code));
+  }
+
+  details.push(
+    formatDetailLabel(
+      "Payload principal",
+      formatBooleanLabel(Boolean(response?.payload)),
+    ),
+  );
+  details.push(
+    formatDetailLabel("Opcoes retornadas", String(payloadOptions.length)),
+  );
+
+  if (missingFields.length > 0) {
+    details.push(
+      formatDetailLabel("Campos faltantes", missingFields.join(", ")),
+    );
+  }
+
+  if (selectedSnapshot.orderNumber) {
+    details.push(formatDetailLabel("OP selecionada", selectedSnapshot.orderNumber));
+  }
+
+  if (selectedSnapshot.productCode) {
+    details.push(formatDetailLabel("Codigo produto", selectedSnapshot.productCode));
+  }
+
+  if (extractionMeta.endpointUrl) {
+    details.push(formatDetailLabel("Endpoint", extractionMeta.endpointUrl));
+  }
+
+  if (extractionMeta.sourcePageUrl) {
+    details.push(formatDetailLabel("Pagina", extractionMeta.sourcePageUrl));
+  }
+
+  if (extractionMeta.activeFilters) {
+    details.push(
+      formatDetailLabel(
+        "Periodo",
+        formatPeriodLabel(
+          extractionMeta.activeFilters.issueDateFrom,
+          extractionMeta.activeFilters.issueDateTo,
+        ),
+      ),
+    );
+  }
+
+  details.push(
+    formatDetailLabel(
+      "Usou endpoint estruturado",
+      formatBooleanLabel(Boolean(extractionMeta.usedStructuredSource)),
+    ),
+  );
+  details.push(
+    formatDetailLabel(
+      "Suporte via endpoint",
+      formatBooleanLabel(Boolean(extractionMeta.supportedByStructuredEndpoint)),
+    ),
+  );
+
+  if ("requiresExplicitSelection" in extractionMeta) {
+    details.push(
+      formatDetailLabel(
+        "Exige selecao manual",
+        formatBooleanLabel(Boolean(extractionMeta.requiresExplicitSelection)),
+      ),
+    );
+  }
+
+  if ("noResults" in extractionMeta) {
+    details.push(
+      formatDetailLabel(
+        "Sem resultados no periodo",
+        formatBooleanLabel(Boolean(extractionMeta.noResults)),
+      ),
+    );
+  }
+
+  if (typeof extractionMeta.totalStructuredOrders === "number") {
+    details.push(
+      formatDetailLabel(
+        "Ordens estruturadas",
+        String(extractionMeta.totalStructuredOrders),
+      ),
+    );
+  }
+
+  if (typeof extractionMeta.bestMatchScore === "number") {
+    details.push(
+      formatDetailLabel("Score do match", String(extractionMeta.bestMatchScore)),
+    );
+  }
+
+  return details;
+}
+
 function formatPeriodLabel(issueDateFrom, issueDateTo) {
   const fromLabel = formatDate(issueDateFrom);
   const toLabel = formatDate(issueDateTo);
@@ -923,38 +1037,10 @@ async function collectOrderPreview() {
 
     state.currentPayload = null;
     importButton.disabled = true;
-
-    const details = [];
-
-    if (
-      Array.isArray(response?.missingFields) &&
-      response.missingFields.length > 0
-    ) {
-      details.push(
-        formatDetailLabel(
-          "Campos faltantes",
-          response.missingFields.join(", "),
-        ),
-      );
-    }
-
-    if (response?.extractionMeta?.sourcePageUrl) {
-      details.push(
-        formatDetailLabel("Pagina", response.extractionMeta.sourcePageUrl),
-      );
-    }
+    const details = buildAnalysisDiagnosticDetails(response);
 
     if (response?.extractionMeta?.activeFilters) {
       syncDateFilters(response.extractionMeta.activeFilters);
-      details.push(
-        formatDetailLabel(
-          "Periodo",
-          formatPeriodLabel(
-            response.extractionMeta.activeFilters.issueDateFrom,
-            response.extractionMeta.activeFilters.issueDateTo,
-          ),
-        ),
-      );
     }
 
     setMappingState("error", "Revisar captura");
@@ -984,35 +1070,7 @@ async function collectOrderPreview() {
   renderOrderOptions(payloadOptions, state.currentPayload);
   renderCapturedData(state.currentPayload);
   importButton.disabled = !state.currentPayload;
-
-  const snapshot = buildDerivedSnapshot(state.currentPayload);
-  const details = [];
-
-  if (snapshot.extractionStrategy) {
-    details.push(
-      formatDetailLabel("Estrategia de captura", snapshot.extractionStrategy),
-    );
-  }
-
-  if (snapshot.sourcePageUrl) {
-    details.push(formatDetailLabel("Página", snapshot.sourcePageUrl));
-  }
-
-  details.push(
-    formatDetailLabel(
-      "Período",
-      formatPeriodLabel(
-        state.activeFilters.issueDateFrom,
-        state.activeFilters.issueDateTo,
-      ),
-    ),
-  );
-
-  if (payloadOptions.length > 1) {
-    details.push(
-      formatDetailLabel("Ordens encontradas", String(payloadOptions.length)),
-    );
-  }
+  const details = buildAnalysisDiagnosticDetails(response);
 
   if (response?.extractionMeta?.requiresExplicitSelection) {
     void appendExtensionLog({

@@ -117,7 +117,7 @@ function buildEmptyState() {
   const message = document.createElement("p");
   message.className = "log-item__message";
   message.textContent =
-    "Nenhum log de criacao de OP foi salvo ainda neste navegador.";
+    "Nenhum log de criação de OP foi salvo ainda neste navegador.";
 
   item.append(message);
   return item;
@@ -202,7 +202,9 @@ async function loadLogs() {
     });
 
     if (!response?.ok) {
-      throw new Error(response?.message ?? "Falha ao carregar logs da extensão.");
+      throw new Error(
+        response?.message ?? "Falha ao carregar logs da extensão.",
+      );
     }
 
     const filteredLogs = renderLogs(response.logs);

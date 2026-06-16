@@ -42,17 +42,41 @@
 
           <div class="field">
             <label for="api-base-url">URL base da API</label>
+            <div
+              class="preset-chip-group"
+              role="group"
+              aria-label="URLs padrao da API"
+            >
+              <button
+                id="api-preset-production-button"
+                class="preset-chip"
+                type="button"
+                data-api-base-url="https://api-dois-pingos.fasters.app/api"
+              >
+                Produção
+              </button>
+              <button
+                id="api-preset-local-button"
+                class="preset-chip"
+                type="button"
+                data-api-base-url="http://localhost:3000"
+              >
+                Local
+              </button>
+            </div>
             <input
               id="api-base-url"
               name="apiBaseUrl"
               type="url"
               placeholder="http://localhost:3000/api"
               autocomplete="url"
+              readonly
               required
             />
             <small
-              >Se informar sem `/api`, a extensão completa
-              automaticamente.</small
+              >Selecione o ambiente pelos presets acima. A URL exibida aqui e
+              usada pela extensao e continua sendo normalizada com `/api` ao
+              salvar.</small
             >
           </div>
 
@@ -95,10 +119,7 @@
                     d="M1.5 12s3.6-6 10.5-6 10.5 6 10.5 6-3.6 6-10.5 6S1.5 12 1.5 12Z"
                   />
                   <circle cx="12" cy="12" r="3.2" />
-                  <path
-                    class="password-toggle__slash"
-                    d="M4 20 20 4"
-                  />
+                  <path class="password-toggle__slash" d="M4 20 20 4" />
                 </svg>
                 <span class="sr-only">Alternar visibilidade da senha</span>
               </button>

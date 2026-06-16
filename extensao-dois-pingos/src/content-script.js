@@ -414,6 +414,18 @@
     return hasUrlHint || hasPageHint || hasFieldHint;
   }
 
+  function resolveSupportedPage({
+    mergedCandidates,
+    endpointMatch,
+    hasStructuredPayload = false,
+  }) {
+    return (
+      detectSupportedPage(mergedCandidates) ||
+      Boolean(endpointMatch) ||
+      hasStructuredPayload
+    );
+  }
+
   function collectDomCandidates() {
     return {
       externalOrderId:
@@ -746,6 +758,14 @@
       };
     }
 
+    if (records.length === 1) {
+      return {
+        record: records[0] ?? null,
+        score: scoreStructuredRecord(records[0], hints),
+        requiresExplicitSelection: false,
+      };
+    }
+
     const ranked = records
       .map((record) => ({
         record,
@@ -857,6 +877,11 @@
       ),
     };
     const endpointMatch = await fetchStructuredEndpointData(activeFilters);
+    const supportedPage = resolveSupportedPage({
+      mergedCandidates,
+      endpointMatch,
+      hasStructuredPayload: Array.isArray(endpointMatch?.payload?.data),
+    });
 
     if (endpointMatch) {
       const filteredRecords = endpointMatch.payload.data.filter((record) => {
@@ -871,7 +896,7 @@
 
       if (sourceRecords.length === 0) {
         return {
-          supportedPage: detectSupportedPage(mergedCandidates),
+          supportedPage,
           payload: null,
           missingFields: [],
           payloadOptions: [],
@@ -882,6 +907,7 @@
             totalStructuredOrders: 0,
             activeFilters,
             noResults: true,
+            supportedByStructuredEndpoint: true,
           },
         };
       }
@@ -909,7 +935,7 @@
 
       if (structuredPayloads.length > 0) {
         return {
-          supportedPage: detectSupportedPage(mergedCandidates),
+          supportedPage,
           payload: structuredPayload,
           missingFields: structuredPayload
             ? buildPayloadFromCandidates(
@@ -933,6 +959,7 @@
             bestMatchScore: bestStructuredMatch.score,
             requiresExplicitSelection:
               bestStructuredMatch.requiresExplicitSelection,
+            supportedByStructuredEndpoint: true,
           },
         };
       }
@@ -949,7 +976,7 @@
     );
 
     return {
-      supportedPage: detectSupportedPage(mergedCandidates),
+      supportedPage,
       payload: fallback.payload,
       missingFields: fallback.missingFields,
       payloadOptions: [
@@ -965,6 +992,7 @@
         ),
         sourcePageUrl: window.location.href,
         activeFilters,
+        supportedByStructuredEndpoint: false,
       },
     };
   }
