@@ -93,8 +93,8 @@ input:focus-visible {
 
 .popup-header {
   display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
+  align-items: center;
+  justify-content: space-between;
   gap: 12px;
   position: relative;
 }
@@ -104,6 +104,7 @@ input:focus-visible {
   align-items: center;
   gap: 12px;
   min-width: 0;
+  flex: 1 1 auto;
 }
 
 .brand-icon,
@@ -172,6 +173,20 @@ input:focus-visible {
 .icon-button--sidebar {
   width: 40px;
   height: 40px;
+}
+
+.icon-button--header {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+}
+
+.icon-button--busy {
+  cursor: default;
+}
+
+.icon-button--busy span {
+  animation: action-button-spin 0.8s linear infinite;
 }
 
 .icon-button--leading {
@@ -312,11 +327,25 @@ input:focus-visible {
     0 3px 10px rgba(19, 34, 68, 0.06);
 }
 
+.order-picker__search-field {
+  margin-bottom: 6px;
+}
+
+.order-picker__search {
+  width: 100%;
+}
+
 .order-picker__list {
   display: grid;
   gap: 4px;
   max-height: 196px;
   overflow-y: auto;
+}
+
+.order-picker__empty {
+  margin: 2px 4px 4px;
+  font-size: 11px;
+  color: #9fb4db;
 }
 
 .order-picker__option {
@@ -583,21 +612,6 @@ img.traceability-icon {
 
 .feedback-message--success {
   color: #247748;
-}
-
-.feedback-details {
-  display: grid;
-  gap: 4px;
-  padding: 9px 10px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.feedback-detail {
-  margin: 0;
-  font-size: 11px;
-  color: #afc3e7;
-  word-break: break-word;
 }
 
 .field {

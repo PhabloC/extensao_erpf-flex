@@ -88,6 +88,9 @@ Projeto reduzido para as stacks ativas `front-end` (React/Vite) e `backend`, pre
 - O fluxo de analise ainda carece de visibilidade sobre o retorno bruto do coletor; a change request 046 expõe diagnostico operacional na popup e nos logs.
 - A configuracao avancada ainda permite editar manualmente a URL da API; a change request 047 restringe a troca aos presets de ambiente.
 - O campo readonly da URL ainda parece editavel no hover; a change request 048 ajusta cursor e contraste desse estado.
+- O dropdown de ordens ainda exige rolagem manual em listas longas; a change request 049 adiciona busca digitada sem remover a selecao compacta atual.
+- O feedback visual da popup ainda exibe detalhes tecnicos demais acima das acoes principais; a change request 050 remove esse bloco e preserva o diagnostico apenas nos logs.
+- A acao de analise ainda ocupa um botao textual no rodape; a change request 051 move esse acionamento para um icone de refresh no cabecalho.
 
 ## Estrategia de execucao
 
@@ -148,6 +151,9 @@ Projeto reduzido para as stacks ativas `front-end` (React/Vite) e `backend`, pre
 - [done] `tasks/change-requests/046-expor-diagnostico-da-analise-do-erp-nos-logs-da-popup.md` - Expor diagnostico da analise do ERP nos logs da popup.
 - [done] `tasks/change-requests/047-tornar-url-da-api-somente-leitura-com-selecao-por-presets.md` - Tornar URL da API somente leitura com selecao por presets.
 - [done] `tasks/change-requests/048-diferenciar-visualmente-o-input-readonly-da-url-da-api.md` - Diferenciar visualmente o input readonly da URL da API.
+- [done] `tasks/change-requests/049-permitir-busca-digitada-no-dropdown-de-ops-da-extensao.md` - Permitir busca digitada no dropdown de OPs da extensao.
+- [done] `tasks/change-requests/050-remover-detalhes-tecnicos-do-feedback-visual-da-popup.md` - Remover detalhes tecnicos do feedback visual da popup.
+- [done] `tasks/change-requests/051-mover-acao-de-analise-para-icone-de-refresh-no-cabecalho.md` - Mover acao de analise para icone de refresh no cabecalho.
 - [done] `tasks/001-definir-contrato-e-modelo-de-ordem-de-producao.md` - Definir contrato OpenAPI e modelo funcional do MVP de Ordem de Producao.
 - [done] `tasks/005-estruturar-extensao-de-navegador-para-importacao-erp-flex.md` - Criar a extensao MVP para importar ordens do ERP Flex.
 - [blocked] `tasks/006-fechar-fluxo-de-rastreabilidade-e-validacao-fim-a-fim.md` - Consolidar rastreabilidade da origem ERP e validar o fluxo ponta a ponta.
@@ -226,6 +232,9 @@ Projeto reduzido para as stacks ativas `front-end` (React/Vite) e `backend`, pre
 - `tasks/change-requests/046-expor-diagnostico-da-analise-do-erp-nos-logs-da-popup.md`: depende de `tasks/change-requests/045-auto-selecionar-op-unica-retornada-pelo-endpoint-do-erp.md` e adiciona rastreabilidade operacional do retorno de `ERP_FLEX_COLLECT_ORDER`.
 - `tasks/change-requests/047-tornar-url-da-api-somente-leitura-com-selecao-por-presets.md`: depende de `tasks/change-requests/043-predefinir-urls-de-api-local-e-producao-na-configuracao-avancada.md` e restringe a troca de ambiente aos presets visuais.
 - `tasks/change-requests/048-diferenciar-visualmente-o-input-readonly-da-url-da-api.md`: depende de `tasks/change-requests/047-tornar-url-da-api-somente-leitura-com-selecao-por-presets.md` e reforca visualmente o estado nao editavel do campo.
+- `tasks/change-requests/049-permitir-busca-digitada-no-dropdown-de-ops-da-extensao.md`: depende de `tasks/change-requests/046-expor-diagnostico-da-analise-do-erp-nos-logs-da-popup.md` e refina a selecao manual das OPs com busca textual dentro do dropdown compacto.
+- `tasks/change-requests/050-remover-detalhes-tecnicos-do-feedback-visual-da-popup.md`: depende de `tasks/change-requests/046-expor-diagnostico-da-analise-do-erp-nos-logs-da-popup.md` e recolhe da popup o bloco visual de diagnostico, mantendo os detalhes nos logs.
+- `tasks/change-requests/051-mover-acao-de-analise-para-icone-de-refresh-no-cabecalho.md`: depende de `tasks/change-requests/028-adicionar-botao-de-fazer-analise-para-buscar-ops-do-erp.md` e refina a ergonomia da analise, deslocando a acao para o cabecalho da popup.
 
 ## Duvidas para validacao humana
 

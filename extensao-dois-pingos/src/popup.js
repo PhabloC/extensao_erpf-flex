@@ -1,8 +1,8 @@
 const statusMessage = document.getElementById("status-message");
-const statusDetails = document.getElementById("status-details");
 const mappingStatus = document.getElementById("mapping-status");
 const importButton = document.getElementById("import-button");
 const reviewButton = document.getElementById("review-button");
+const reviewButtonIcon = document.getElementById("review-button-icon");
 const loadPreviewButton = document.getElementById("load-preview-button");
 const openAdvancedSettingsButton = document.getElementById(
   "open-advanced-settings-button",
@@ -14,7 +14,9 @@ const orderSelectorSection = document.getElementById("order-selector-section");
 const orderSelectorCount = document.getElementById("order-selector-count");
 const orderSelectorTrigger = document.getElementById("order-selector-trigger");
 const orderSelectorPanel = document.getElementById("order-selector-panel");
+const orderSelectorSearch = document.getElementById("order-selector-search");
 const orderSelectorList = document.getElementById("order-selector-list");
+const orderSelectorEmpty = document.getElementById("order-selector-empty");
 const captureOrderNumber = document.getElementById("capture-order-number");
 const captureProductErp = document.getElementById("capture-product-erp");
 const captureProductCode = document.getElementById("capture-product-code");
@@ -49,6 +51,7 @@ const confirmNotes = document.getElementById("confirm-notes");
 const state = {
   currentPayload: null,
   currentPayloadOptions: [],
+  orderSearchTerm: "",
   activeFilters: getCurrentMonthDateRange(),
   isOrderPickerOpen: false,
   isImportConfirmationOpen: false,
@@ -427,25 +430,9 @@ async function requestOrderCollection(activeTab) {
   }
 }
 
-function renderFeedback(message, details = [], tone = "neutral") {
+function renderFeedback(message, _details = [], tone = "neutral") {
   statusMessage.textContent = message;
   setFeedbackTone(tone);
-
-  if (!details.length) {
-    statusDetails.hidden = true;
-    statusDetails.replaceChildren();
-    return;
-  }
-
-  const nodes = details.map((detail) => {
-    const row = document.createElement("p");
-    row.className = "feedback-detail";
-    row.textContent = detail;
-    return row;
-  });
-
-  statusDetails.replaceChildren(...nodes);
-  statusDetails.hidden = false;
 }
 
 function bindClick(element, handler) {
@@ -478,6 +465,28 @@ function setElementText(element, text) {
   }
 
   element.textContent = text;
+}
+
+function setReviewButtonVisualState(isBusy) {
+  if (!reviewButton) {
+    return;
+  }
+
+  reviewButton.classList.toggle("icon-button--busy", isBusy);
+  reviewButton.setAttribute(
+    "aria-label",
+    isBusy
+      ? "Analisando a página atual do ERP"
+      : "Fazer análise da página atual do ERP",
+  );
+  reviewButton.setAttribute(
+    "title",
+    isBusy ? "Analisando..." : "Fazer análise",
+  );
+
+  if (reviewButtonIcon) {
+    reviewButtonIcon.innerHTML = isBusy ? "&#8635;" : "&#10227;";
+  }
 }
 
 function setButtonVisualState(button, mode, labels) {
@@ -543,8 +552,6 @@ function updateImportActionState() {
 function setBusy(isBusy, options = {}) {
   const {
     importBusy = false,
-    reviewBusyLabel = "Analisando ERP...",
-    reviewIdleLabel = "Fazer análise",
   } = options;
 
   state.isSubmittingImport = importBusy;
@@ -555,7 +562,7 @@ function setBusy(isBusy, options = {}) {
   setElementDisabled(openLogsButton, isBusy);
   setElementDisabled(issueDateFromInput, isBusy);
   setElementDisabled(issueDateToInput, isBusy);
-  setElementText(reviewButton, isBusy ? reviewBusyLabel : reviewIdleLabel);
+  setReviewButtonVisualState(isBusy);
   updateImportActionState();
 }
 
@@ -563,10 +570,20 @@ function setOrderPickerOpen(isOpen) {
   const canOpen =
     state.currentPayloadOptions.length > 1 && !orderSelectorTrigger.disabled;
   const nextState = canOpen ? isOpen : false;
+  const wasOpen = state.isOrderPickerOpen;
 
   state.isOrderPickerOpen = nextState;
   orderSelectorPanel.hidden = !nextState;
   orderSelectorTrigger.setAttribute("aria-expanded", String(nextState));
+
+  if (orderSelectorSearch) {
+    if (nextState && !wasOpen) {
+      orderSelectorSearch.focus();
+      orderSelectorSearch.select();
+    } else if (!nextState && wasOpen) {
+      orderSelectorSearch.blur();
+    }
+  }
 }
 
 function syncDateFilters(filters = {}) {
@@ -781,11 +798,37 @@ function buildOrderOptionLabel(payload) {
   return [primaryId, code, variations].filter(Boolean).join(" | ");
 }
 
-function renderOrderOptions(payloadOptions, selectedPayload) {
+function getFilteredOrderOptions() {
+  const normalizedSearch = normalizeText(state.orderSearchTerm).toLocaleLowerCase(
+    "pt-BR",
+  );
+
+  if (!normalizedSearch) {
+    return state.currentPayloadOptions;
+  }
+
+  return state.currentPayloadOptions.filter((payload) => {
+    return buildOrderOptionLabel(payload)
+      .toLocaleLowerCase("pt-BR")
+      .includes(normalizedSearch);
+  });
+}
+
+function renderOrderOptions(payloadOptions, selectedPayload, options = {}) {
+  const { preserveOpen = false, preserveSearch = false } = options;
+
   state.currentPayloadOptions = Array.isArray(payloadOptions)
     ? payloadOptions
     : [];
-  setOrderPickerOpen(false);
+
+  if (!preserveSearch) {
+    state.orderSearchTerm = "";
+    orderSelectorSearch.value = "";
+  }
+
+  if (!preserveOpen) {
+    setOrderPickerOpen(false);
+  }
 
   if (state.currentPayloadOptions.length <= 1) {
     orderSelectorSection.hidden = true;
@@ -794,11 +837,13 @@ function renderOrderOptions(payloadOptions, selectedPayload) {
     orderSelectorTrigger.textContent =
       buildOrderOptionLabel(selectedPayload) || "Selecionar ordem";
     orderSelectorTrigger.disabled = true;
+    orderSelectorEmpty.hidden = true;
     return;
   }
 
   const selectedKey = buildPayloadSelectionKey(selectedPayload);
-  const optionNodes = state.currentPayloadOptions.map((payload) => {
+  const filteredPayloadOptions = getFilteredOrderOptions();
+  const optionNodes = filteredPayloadOptions.map((payload) => {
     const option = document.createElement("button");
     const optionKey = buildPayloadSelectionKey(payload);
     option.type = "button";
@@ -820,6 +865,7 @@ function renderOrderOptions(payloadOptions, selectedPayload) {
   });
 
   orderSelectorList.replaceChildren(...optionNodes);
+  orderSelectorEmpty.hidden = optionNodes.length > 0;
   orderSelectorTrigger.textContent =
     buildOrderOptionLabel(selectedPayload) || "Selecionar ordem";
   orderSelectorCount.textContent = `${state.currentPayloadOptions.length} OPs`;
@@ -873,6 +919,7 @@ function clearCapturedData() {
   resetImportButtonState();
   setImportConfirmationOpen(false, { restoreFocus: false });
   state.currentPayloadOptions = [];
+  state.orderSearchTerm = "";
   captureOrderNumber.textContent = "Não capturada";
   captureProductErp.textContent = "Não capturado";
   captureProductCode.textContent = "Não capturado";
@@ -888,6 +935,8 @@ function clearCapturedData() {
   orderSelectorCount.textContent = "0 OPs";
   orderSelectorTrigger.textContent = "Selecionar ordem";
   orderSelectorTrigger.disabled = true;
+  orderSelectorSearch.value = "";
+  orderSelectorEmpty.hidden = true;
   setOrderPickerOpen(false);
   setMappingState("neutral", "Aguardando leitura da página");
 }
@@ -1330,6 +1379,14 @@ function selectOrderPayloadByKey(selectionKey) {
 
   return true;
 }
+
+orderSelectorSearch?.addEventListener("input", () => {
+  state.orderSearchTerm = normalizeText(orderSelectorSearch.value);
+  renderOrderOptions(state.currentPayloadOptions, state.currentPayload, {
+    preserveOpen: true,
+    preserveSearch: true,
+  });
+});
 
 bindClick(orderSelectorTrigger, () => {
   setOrderPickerOpen(!state.isOrderPickerOpen);

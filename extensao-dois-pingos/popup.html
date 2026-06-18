@@ -43,6 +43,15 @@
                 <h1>Importar OP para o Kanban</h1>
               </div>
             </div>
+            <button
+              id="review-button"
+              class="icon-button icon-button--header"
+              type="button"
+              aria-label="Fazer análise da página atual do ERP"
+              title="Fazer análise"
+            >
+              <span id="review-button-icon" aria-hidden="true">&#10227;</span>
+            </button>
           </header>
 
           <section
@@ -93,12 +102,32 @@
               </button>
 
               <div id="order-selector-panel" class="order-picker__panel" hidden>
+                <div class="field field--compact order-picker__search-field">
+                  <label for="order-selector-search" class="sr-only">
+                    Pesquisar ordens encontradas
+                  </label>
+                  <input
+                    id="order-selector-search"
+                    class="order-picker__search"
+                    type="search"
+                    placeholder="Digite para pesquisar OP, código ou variação"
+                    autocomplete="off"
+                    spellcheck="false"
+                  />
+                </div>
                 <div
                   id="order-selector-list"
                   class="order-picker__list"
                   role="listbox"
                   aria-label="Selecionar ordem"
                 ></div>
+                <p
+                  id="order-selector-empty"
+                  class="order-picker__empty"
+                  hidden
+                >
+                  Nenhuma ordem encontrada para o filtro digitado.
+                </p>
               </div>
             </div>
           </section>
@@ -203,10 +232,10 @@
               Abra uma ordem no ERP Flex para revisar os dados antes da criação.
             </p>
             <p class="feedback-hint">
-              Use <strong>Fazer análise</strong> para puxar as Ordens de
-              Produção da página atual do ERP antes de criar a OP no kanban.
+              Use o <strong>icone de atualizar no cabecalho</strong> para puxar
+              as Ordens de Produção da página atual do ERP antes de criar a OP
+              no kanban.
             </p>
-            <div id="status-details" class="feedback-details" hidden></div>
           </section>
 
           <section
@@ -296,13 +325,6 @@
               class="action-button action-button--primary"
             >
               Criar OP no Kanban
-            </button>
-            <button
-              id="review-button"
-              type="button"
-              class="action-button action-button--secondary"
-            >
-              Fazer análise
             </button>
           </div>
         </section>
