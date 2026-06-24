@@ -22,7 +22,8 @@ body {
   min-width: 388px;
   max-width: 388px;
   border-radius: 0;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   background:
     radial-gradient(
       circle at 65% 18%,
@@ -42,7 +43,7 @@ html {
   min-width: 388px;
   max-width: 388px;
   border-radius: 0;
-  overflow: hidden;
+  overflow-x: hidden;
   background: transparent;
 }
 
@@ -61,13 +62,17 @@ input:focus-visible {
   padding: 0;
   width: 100%;
   max-width: 100%;
+  overflow-x: hidden;
   border-radius: 0;
 }
 
 .popup-frame {
   display: grid;
-  grid-template-columns: 58px minmax(0, 1fr);
+  grid-template-columns: 60px minmax(0, 1fr);
   min-height: 600px;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .popup-sidebar {
@@ -76,7 +81,8 @@ input:focus-visible {
   align-items: center;
   justify-content: flex-start;
   gap: 10px;
-  padding: 16px 10px;
+  padding: 16px 8px;
+  min-width: 0;
   background: rgba(4, 17, 40, 0.96);
   border-right: 1px solid rgba(82, 119, 183, 0.2);
 }
@@ -87,7 +93,8 @@ input:focus-visible {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  padding: 18px 16px 16px;
+  overflow-x: hidden;
+  padding: 18px 12px 16px;
   background: rgba(10, 32, 69, 0.94);
 }
 
@@ -198,6 +205,7 @@ input:focus-visible {
 .advanced-page-section {
   display: grid;
   gap: 10px;
+  min-width: 0;
 }
 
 .date-filter {
@@ -226,7 +234,7 @@ input:focus-visible {
 
 .date-filter__grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 8px;
 }
 
@@ -392,7 +400,7 @@ input:focus-visible {
 
 .capture-row {
   display: grid;
-  grid-template-columns: 102px minmax(0, 1fr);
+  grid-template-columns: minmax(88px, 34%) minmax(0, 1fr);
   gap: 8px;
   align-items: start;
 }
@@ -457,9 +465,10 @@ input:focus-visible {
 
 .traceability-card {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 24px minmax(0, 1fr);
-  gap: 12px;
-  padding: 12px 14px;
+  grid-template-columns: minmax(0, 1fr) 20px minmax(0, 1fr);
+  gap: 10px;
+  min-width: 0;
+  padding: 12px;
   border: 1px solid rgba(92, 129, 194, 0.18);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.04);
@@ -507,7 +516,6 @@ img.traceability-icon {
   height: 1px;
   width: 100%;
   background: linear-gradient(90deg, #6f86b5 0%, #a9bfeb 100%);
-  margin-left: -15px;
 }
 
 .traceability-divider::after {
@@ -525,11 +533,13 @@ img.traceability-icon {
 .feedback-panel {
   display: grid;
   gap: 8px;
+  min-width: 0;
 }
 
 .confirm-panel {
   display: grid;
   gap: 10px;
+  min-width: 0;
   padding: 12px;
   border: 1px solid rgba(92, 129, 194, 0.22);
   border-radius: 8px;
@@ -564,7 +574,7 @@ img.traceability-icon {
 
 .confirm-row {
   display: grid;
-  grid-template-columns: 84px minmax(0, 1fr);
+  grid-template-columns: minmax(84px, 34%) minmax(0, 1fr);
   gap: 8px;
   align-items: start;
 }
@@ -614,6 +624,157 @@ img.traceability-icon {
   color: #247748;
 }
 
+.feedback-details {
+  display: grid;
+  gap: 4px;
+}
+
+.feedback-detail {
+  margin: 0;
+  font-size: 11px;
+  color: #9fb4db;
+}
+
+.feedback-panel--duplicate .feedback-hint {
+  display: none;
+}
+
+.feedback-alert {
+  display: grid;
+  gap: 10px;
+  padding: 11px 11px 10px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+}
+
+.feedback-alert--duplicate {
+  border-color: rgba(255, 176, 72, 0.5);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 176, 72, 0.18) 0%,
+      rgba(255, 120, 48, 0.1) 52%,
+      rgba(7, 23, 49, 0.24) 100%
+    ),
+    rgba(18, 28, 52, 0.96);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 214, 150, 0.16),
+    0 8px 20px rgba(7, 12, 28, 0.3);
+}
+
+.feedback-alert__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.feedback-alert__pulse {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ffb84a;
+  box-shadow: 0 0 0 0 rgba(255, 184, 74, 0.55);
+  flex-shrink: 0;
+  animation: feedback-pulse-blink 1.15s ease-in-out infinite;
+}
+
+.feedback-alert__title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #ffe2b8;
+  text-transform: uppercase;
+}
+
+.feedback-alert__highlight {
+  display: grid;
+  gap: 3px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  background: rgba(4, 12, 28, 0.5);
+  border: 1px solid rgba(255, 176, 72, 0.22);
+}
+
+.feedback-alert__highlight-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #d7ad72;
+}
+
+.feedback-alert__highlight-value {
+  display: block;
+  font-size: 18px;
+  line-height: 1.15;
+  font-weight: 800;
+  color: #fff8ee;
+  word-break: break-word;
+}
+
+.feedback-alert__message {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #f7ead8;
+}
+
+.feedback-alert__details {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 8px;
+  border-radius: 8px;
+  background: rgba(4, 12, 28, 0.42);
+  border: 1px solid rgba(255, 176, 72, 0.16);
+}
+
+.feedback-alert__detail-row {
+  display: grid;
+  grid-template-columns: minmax(88px, 38%) minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+}
+
+.feedback-alert__detail-row dt,
+.feedback-alert__detail-row dd {
+  margin: 0;
+  font-size: 11px;
+}
+
+.feedback-alert__detail-row dt {
+  color: #c9a56f;
+}
+
+.feedback-alert__detail-row dd {
+  color: #fff8ee;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+@keyframes feedback-pulse-blink {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 184, 74, 0.55);
+  }
+
+  50% {
+    opacity: 0.28;
+    transform: scale(0.82);
+    box-shadow: 0 0 0 6px rgba(255, 184, 74, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feedback-alert__pulse {
+    animation: none;
+    opacity: 0.9;
+  }
+}
+
 .field {
   display: grid;
   gap: 6px;
@@ -636,11 +797,18 @@ img.traceability-icon {
 
 .field input {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   border: 1px solid rgba(110, 144, 204, 0.22);
   border-radius: 8px;
   padding: 10px 11px;
   background: rgba(3, 15, 36, 0.42);
   color: #eef4ff;
+}
+
+.field input[type="date"] {
+  padding-right: 8px;
+  font-size: 11px;
 }
 
 .field input[readonly] {

@@ -221,8 +221,19 @@
             </div>
           </section>
 
-          <section class="feedback-panel" aria-labelledby="feedback-title">
+          <section
+            id="feedback-panel"
+            class="feedback-panel"
+            aria-labelledby="feedback-title"
+          >
             <h2 id="feedback-title" class="sr-only">Feedback operacional</h2>
+            <div
+              id="status-alert"
+              class="feedback-alert feedback-alert--duplicate"
+              hidden
+              role="alert"
+              aria-live="assertive"
+            ></div>
             <p
               id="status-message"
               class="feedback-message"
@@ -231,6 +242,7 @@
             >
               Abra uma ordem no ERP Flex para revisar os dados antes da criação.
             </p>
+            <div id="status-details" class="feedback-details" hidden></div>
             <p class="feedback-hint">
               Use o <strong>icone de atualizar no cabecalho</strong> para puxar
               as Ordens de Produção da página atual do ERP antes de criar a OP

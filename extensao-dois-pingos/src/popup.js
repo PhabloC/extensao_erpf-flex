@@ -1,4 +1,7 @@
 const statusMessage = document.getElementById("status-message");
+const statusAlert = document.getElementById("status-alert");
+const statusDetails = document.getElementById("status-details");
+const feedbackPanel = document.getElementById("feedback-panel");
 const mappingStatus = document.getElementById("mapping-status");
 const importButton = document.getElementById("import-button");
 const reviewButton = document.getElementById("review-button");
@@ -358,6 +361,142 @@ function setFeedbackTone(tone) {
   }
 }
 
+function parseDetailLabel(detail) {
+  const separatorIndex = detail.indexOf(": ");
+
+  if (separatorIndex === -1) {
+    return {
+      label: detail,
+      value: "",
+    };
+  }
+
+  return {
+    label: detail.slice(0, separatorIndex),
+    value: detail.slice(separatorIndex + 2),
+  };
+}
+
+function clearDuplicateAlert() {
+  if (!statusAlert) {
+    return;
+  }
+
+  statusAlert.hidden = true;
+  statusAlert.replaceChildren();
+  feedbackPanel?.classList.remove("feedback-panel--duplicate");
+}
+
+function getDetailValue(details, label) {
+  const prefix = `${label}: `;
+  const match = details.find((detail) => detail.startsWith(prefix));
+
+  if (!match) {
+    return "";
+  }
+
+  return match.slice(prefix.length).trim();
+}
+
+function renderDuplicateAlert(message, details = []) {
+  if (!statusAlert) {
+    statusMessage.hidden = false;
+    statusMessage.textContent = message;
+    return;
+  }
+
+  clearDuplicateAlert();
+  statusAlert.hidden = false;
+  statusMessage.hidden = true;
+  feedbackPanel?.classList.add("feedback-panel--duplicate");
+
+  const header = document.createElement("div");
+  header.className = "feedback-alert__header";
+
+  const pulse = document.createElement("span");
+  pulse.className = "feedback-alert__pulse";
+  pulse.setAttribute("aria-hidden", "true");
+
+  const title = document.createElement("p");
+  title.className = "feedback-alert__title";
+  title.textContent = "OP duplicada";
+
+  header.append(pulse, title);
+
+  const externalOrderId = getDetailValue(details, "Id externo ERP");
+
+  if (externalOrderId) {
+    const highlight = document.createElement("div");
+    highlight.className = "feedback-alert__highlight";
+
+    const highlightLabel = document.createElement("span");
+    highlightLabel.className = "feedback-alert__highlight-label";
+    highlightLabel.textContent = "Id externo ERP";
+
+    const highlightValue = document.createElement("strong");
+    highlightValue.className = "feedback-alert__highlight-value";
+    highlightValue.textContent = externalOrderId;
+
+    highlight.append(highlightLabel, highlightValue);
+    statusAlert.append(header, highlight);
+  } else {
+    statusAlert.append(header);
+  }
+
+  const body = document.createElement("p");
+  body.className = "feedback-alert__message";
+  body.textContent = message;
+  statusAlert.append(body);
+
+  const secondaryDetails = details.filter(
+    (detail) => !detail.startsWith("Id externo ERP: "),
+  );
+
+  if (secondaryDetails.length) {
+    const detailsList = document.createElement("dl");
+    detailsList.className = "feedback-alert__details";
+
+    secondaryDetails.forEach((detail) => {
+      const { label, value } = parseDetailLabel(detail);
+      const row = document.createElement("div");
+      row.className = "feedback-alert__detail-row";
+
+      const term = document.createElement("dt");
+      term.textContent = label;
+
+      const definition = document.createElement("dd");
+      definition.textContent = value;
+
+      row.append(term, definition);
+      detailsList.append(row);
+    });
+
+    statusAlert.append(detailsList);
+  }
+}
+
+function renderFeedbackDetails(details = []) {
+  if (!statusDetails) {
+    return;
+  }
+
+  if (!details.length) {
+    statusDetails.hidden = true;
+    statusDetails.replaceChildren();
+    return;
+  }
+
+  const nodes = details.map((detail) => {
+    const row = document.createElement("p");
+    row.className = "feedback-detail";
+    row.textContent = detail;
+    return row;
+  });
+
+  statusDetails.replaceChildren(...nodes);
+  statusDetails.hidden = false;
+}
+
 function isSupportedTabUrl(url) {
   const normalizedUrl = normalizeText(url);
 
@@ -430,9 +569,19 @@ async function requestOrderCollection(activeTab) {
   }
 }
 
-function renderFeedback(message, _details = [], tone = "neutral") {
+function renderFeedback(message, details = [], tone = "neutral") {
+  if (tone === "duplicate") {
+    clearDuplicateAlert();
+    renderDuplicateAlert(message, details);
+    renderFeedbackDetails([]);
+    return;
+  }
+
+  clearDuplicateAlert();
+  statusMessage.hidden = false;
   statusMessage.textContent = message;
   setFeedbackTone(tone);
+  renderFeedbackDetails(details);
 }
 
 function bindClick(element, handler) {
@@ -1051,8 +1200,14 @@ async function loadSettings() {
 
   renderSession(response.settings);
 
-  if (response.settings.lastImportSummary) {
-    renderFeedback(response.settings.lastImportSummary, [], "success");
+  const lastImportFeedback = buildLastImportFeedback(response.settings);
+
+  if (lastImportFeedback) {
+    renderFeedback(
+      lastImportFeedback.message,
+      lastImportFeedback.details,
+      lastImportFeedback.tone,
+    );
   }
 
   return response.settings;
@@ -1152,10 +1307,54 @@ async function collectOrderPreview() {
   return response.payload;
 }
 
+function buildLastImportFeedback(settings) {
+  const summary = normalizeText(settings?.lastImportSummary);
+
+  if (!summary && settings?.lastImportResult !== "duplicate") {
+    return null;
+  }
+
+  if (settings?.lastImportResult === "duplicate") {
+    return buildImportFeedback({
+      result: "duplicate",
+      existingProductionOrderId:
+        settings.lastImportExistingProductionOrderId || null,
+      externalOrderId: settings.lastImportExternalOrderId || null,
+    });
+  }
+
+  if (summary.startsWith("Duplicada:")) {
+    const externalOrderId =
+      summary.replace(/^Duplicada:\s*/i, "").trim() || "Não informado";
+
+    return {
+      message:
+        "Esta ordem já foi importada anteriormente. Nenhuma nova OP foi criada no kanban.",
+      details: [formatDetailLabel("Id externo ERP", externalOrderId)],
+      tone: "duplicate",
+    };
+  }
+
+  if (summary.startsWith("Importada:")) {
+    return {
+      message: summary,
+      details: [],
+      tone: "success",
+    };
+  }
+
+  return {
+    message: summary,
+    details: [],
+    tone: "neutral",
+  };
+}
+
 function buildImportFeedback(result) {
   if (result.result === "duplicate") {
     return {
-      message: "A OP selecionada já existe no sistema destino.",
+      message:
+        "Esta ordem já foi importada anteriormente. Nenhuma nova OP foi criada no kanban.",
       details: [
         formatDetailLabel(
           "OP existente",
@@ -1166,7 +1365,7 @@ function buildImportFeedback(result) {
           result.externalOrderId ?? "Não informado",
         ),
       ],
-      tone: "error",
+      tone: "duplicate",
     };
   }
 

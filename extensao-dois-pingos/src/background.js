@@ -122,6 +122,10 @@ async function readSettings() {
     accessToken: "",
     userEmail: "",
     lastImportSummary: "",
+    lastImportResult: "",
+    lastImportExternalOrderId: "",
+    lastImportExistingProductionOrderId: "",
+    lastImportOrderNumber: "",
     ...stored[EXTENSION_STORAGE_KEY],
   };
 }
@@ -673,6 +677,23 @@ async function handleImport(message, sendResponse) {
       userEmail: email,
       accessToken,
       lastImportSummary: summary,
+      lastImportResult: result.result,
+      lastImportExternalOrderId:
+        result.result === "duplicate"
+          ? (result.externalOrderId ?? message.payload.externalOrderId ?? "")
+          : (result.productionOrder?.source?.externalOrderId ??
+            message.payload.externalOrderId ??
+            ""),
+      lastImportExistingProductionOrderId:
+        result.result === "duplicate"
+          ? (result.existingProductionOrderId ?? "")
+          : "",
+      lastImportOrderNumber:
+        result.result === "created"
+          ? (result.productionOrder?.orderNumber ??
+            message.payload.orderNumber ??
+            "")
+          : (message.payload.orderNumber ?? ""),
     });
 
     await logExtensionEvent({
