@@ -82,7 +82,7 @@ export class ProductionOrderEntity {
   })
   origin!: ProductionOrderOrigin;
 
-  @Index('idx_production_orders_external_order_id', { unique: true })
+  @Index('idx_production_orders_external_order_id')
   @Column({
     name: 'external_order_id',
     type: 'varchar',

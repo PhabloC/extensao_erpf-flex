@@ -1,3 +1,4 @@
+const popupCard = document.querySelector(".popup-card");
 const statusMessage = document.getElementById("status-message");
 const statusAlert = document.getElementById("status-alert");
 const statusDetails = document.getElementById("status-details");
@@ -20,6 +21,9 @@ const orderSelectorPanel = document.getElementById("order-selector-panel");
 const orderSelectorSearch = document.getElementById("order-selector-search");
 const orderSelectorList = document.getElementById("order-selector-list");
 const orderSelectorEmpty = document.getElementById("order-selector-empty");
+const selectedOrdersSection = document.getElementById("selected-orders-section");
+const selectedOrdersCount = document.getElementById("selected-orders-count");
+const selectedOrdersList = document.getElementById("selected-orders-list");
 const captureOrderNumber = document.getElementById("capture-order-number");
 const captureProductErp = document.getElementById("capture-product-erp");
 const captureProductCode = document.getElementById("capture-product-code");
@@ -40,27 +44,48 @@ const dismissConfirmationButton = document.getElementById(
   "dismiss-confirmation-button",
 );
 const confirmImportButton = document.getElementById("confirm-import-button");
-const confirmOrderNumber = document.getElementById("confirm-order-number");
-const confirmProductErp = document.getElementById("confirm-product-erp");
-const confirmProductCode = document.getElementById("confirm-product-code");
-const confirmCustomerName = document.getElementById("confirm-customer-name");
-const confirmProductBase = document.getElementById("confirm-product-base");
-const confirmVariations = document.getElementById("confirm-variations");
-const confirmQuantity = document.getElementById("confirm-quantity");
-const confirmUnit = document.getElementById("confirm-unit");
-const confirmDueDate = document.getElementById("confirm-due-date");
-const confirmNotes = document.getElementById("confirm-notes");
-
+const importConfirmationTitle = document.getElementById(
+  "import-confirmation-title",
+);
+const importConfirmationCopy = document.getElementById(
+  "import-confirmation-copy",
+);
+const importConfirmationList = document.getElementById("import-confirmation-list");
+const activeConflictPanel = document.getElementById("active-conflict-panel");
+const cancelActiveConflictButton = document.getElementById(
+  "cancel-active-conflict-button",
+);
+const confirmActiveUpdateButton = document.getElementById(
+  "confirm-active-update-button",
+);
+const dismissActiveConflictButton = document.getElementById(
+  "dismiss-active-conflict-button",
+);
+const activeConflictTitle = document.getElementById("active-conflict-title");
+const activeConflictCopy = document.getElementById("active-conflict-copy");
+const activeConflictHighlight = document.getElementById(
+  "active-conflict-highlight",
+);
+const activeConflictList = document.getElementById("active-conflict-list");
+const importSuccessOverlay = document.getElementById("import-success-overlay");
+const importSuccessMessage = document.getElementById("import-success-message");
+const IMPORT_SUCCESS_ANIMATION_MS = 1800;
+let importSuccessAnimationTimer = null;
 const state = {
   currentPayload: null,
   currentPayloadOptions: [],
+  selectedPayloadKeys: [],
   orderSearchTerm: "",
   activeFilters: getCurrentMonthDateRange(),
   isOrderPickerOpen: false,
   isImportConfirmationOpen: false,
+  isActiveConflictOpen: false,
   isSubmittingImport: false,
   importButtonMode: "idle",
   lastFocusedElementBeforeConfirmation: null,
+  lastFocusedElementBeforeActiveConflict: null,
+  pendingBatchSummary: null,
+  pendingActiveConflicts: [],
 };
 
 const NO_RECEIVER_ERROR_PATTERN =
@@ -160,6 +185,46 @@ function buildPayloadSelectionKey(payload) {
   ]
     .filter(Boolean)
     .join("|");
+}
+
+function findPayloadBySelectionKey(selectionKey) {
+  return state.currentPayloadOptions.find((payload) => {
+    return buildPayloadSelectionKey(payload) === selectionKey;
+  });
+}
+
+function getSelectedPayloads() {
+  return state.selectedPayloadKeys
+    .map((selectionKey) => findPayloadBySelectionKey(selectionKey))
+    .filter(Boolean);
+}
+
+function setSelectedPayloadKeys(selectionKeys) {
+  const availableSelectionKeys = new Set(
+    state.currentPayloadOptions.map((payload) => buildPayloadSelectionKey(payload)),
+  );
+
+  state.selectedPayloadKeys = Array.from(new Set(selectionKeys)).filter(
+    (selectionKey) => availableSelectionKeys.has(selectionKey),
+  );
+}
+
+function ensureCurrentPayload(selectionKey = "") {
+  const explicitPayload = selectionKey ? findPayloadBySelectionKey(selectionKey) : null;
+
+  if (explicitPayload) {
+    state.currentPayload = explicitPayload;
+    return;
+  }
+
+  const selectedPayloads = getSelectedPayloads();
+
+  if (selectedPayloads.length > 0) {
+    state.currentPayload = selectedPayloads[0];
+    return;
+  }
+
+  state.currentPayload = state.currentPayloadOptions[0] ?? null;
 }
 
 function normalizeDateInputValue(value) {
@@ -419,7 +484,7 @@ function renderDuplicateAlert(message, details = []) {
 
   const title = document.createElement("p");
   title.className = "feedback-alert__title";
-  title.textContent = "OP duplicada";
+  title.textContent = "OP ativa já existente";
 
   header.append(pulse, title);
 
@@ -667,28 +732,46 @@ function renderSession(settings) {
 }
 
 function updateImportActionState() {
-  const hasPayload = Boolean(state.currentPayload);
+  const selectedPayloadCount = getSelectedPayloads().length;
+  const hasImportSelection = selectedPayloadCount > 0;
   const hasMultipleOrders = state.currentPayloadOptions.length > 1;
 
   setButtonVisualState(importButton, state.importButtonMode, {
-    idle: "Criar OP no Kanban",
-    loading: "Criando OP no Kanban...",
-    success: "OP criada no Kanban",
+    idle:
+      selectedPayloadCount > 1
+        ? `Criar ${selectedPayloadCount} OPs no Kanban`
+        : "Criar OP no Kanban",
+    loading:
+      selectedPayloadCount > 1
+        ? "Criando OPs no Kanban..."
+        : "Criando OP no Kanban...",
+    success:
+      selectedPayloadCount > 1 ? "OPs enviadas ao Kanban" : "OP criada no Kanban",
   });
 
   setButtonVisualState(confirmImportButton, state.importButtonMode, {
-    idle: "Confirmar e criar OP",
-    loading: "Criando OP no Kanban...",
-    success: "OP criada no Kanban",
+    idle:
+      selectedPayloadCount > 1
+        ? `Confirmar e criar ${selectedPayloadCount} OPs`
+        : "Confirmar e criar OP",
+    loading:
+      selectedPayloadCount > 1
+        ? "Criando OPs no Kanban..."
+        : "Criando OP no Kanban...",
+    success:
+      selectedPayloadCount > 1 ? "OPs enviadas ao Kanban" : "OP criada no Kanban",
   });
 
   setElementDisabled(
     importButton,
-    !hasPayload || state.isSubmittingImport || state.isImportConfirmationOpen,
+    !hasImportSelection ||
+      state.isSubmittingImport ||
+      state.isImportConfirmationOpen ||
+      state.isActiveConflictOpen,
   );
   setElementDisabled(
     confirmImportButton,
-    !hasPayload || state.isSubmittingImport,
+    !hasImportSelection || state.isSubmittingImport,
   );
   setElementDisabled(cancelConfirmationButton, state.isSubmittingImport);
   setElementDisabled(dismissConfirmationButton, state.isSubmittingImport);
@@ -713,6 +796,7 @@ function setBusy(isBusy, options = {}) {
   setElementDisabled(issueDateToInput, isBusy);
   setReviewButtonVisualState(isBusy);
   updateImportActionState();
+  updateActiveConflictActionState();
 }
 
 function setOrderPickerOpen(isOpen) {
@@ -803,42 +887,146 @@ function buildDerivedSnapshot(payload) {
   };
 }
 
-function renderImportConfirmation(payload) {
-  const snapshot = buildDerivedSnapshot(payload);
+function buildConfirmOrderDetailsList(snapshot) {
+  const details = document.createElement("dl");
+  details.className = "confirm-list confirm-order-item__details";
 
-  confirmOrderNumber.textContent = formatFallback(
-    snapshot.orderNumber,
-    "Não capturada",
+  const fields = [
+    ["OP:", formatFallback(snapshot.orderNumber, "Não capturada")],
+    ["Produto ERP:", formatFallback(snapshot.productErp, "Não capturado")],
+    ["Código:", formatFallback(snapshot.productCode, "Não capturado")],
+    ["Cliente:", formatFallback(snapshot.customerName, "Não capturado")],
+    ["Produto base:", formatFallback(snapshot.productBase, "Não identificado")],
+    ["Variações:", formatFallback(snapshot.variations, "Não identificadas")],
+    ["Quantidade:", formatQuantity(snapshot.quantity)],
+    ["Unidade de Medida:", formatFallback(snapshot.unit, "Não capturada")],
+    ["Prazo:", formatDate(snapshot.dueDate)],
+    ["Observações:", formatFallback(snapshot.notes, "Não capturadas")],
+  ];
+
+  fields.forEach(([label, value]) => {
+    const row = document.createElement("div");
+    row.className = "confirm-row";
+
+    const term = document.createElement("dt");
+    term.textContent = label;
+
+    const definition = document.createElement("dd");
+    definition.textContent = value;
+
+    row.append(term, definition);
+    details.append(row);
+  });
+
+  return details;
+}
+
+function createConfirmOrderAccordionItem(payload) {
+  const snapshot = buildDerivedSnapshot(payload);
+  const article = document.createElement("article");
+  article.className = "confirm-order-item confirm-order-item--collapsible";
+  article.setAttribute("role", "listitem");
+
+  const trigger = document.createElement("button");
+  trigger.type = "button";
+  trigger.className = "confirm-order-item__trigger";
+  trigger.setAttribute("aria-expanded", "false");
+
+  const summary = document.createElement("span");
+  summary.className = "confirm-order-item__summary";
+  summary.textContent = buildOrderOptionLabel(payload);
+
+  const chevron = document.createElement("span");
+  chevron.className = "confirm-order-item__chevron";
+  chevron.setAttribute("aria-hidden", "true");
+
+  trigger.append(summary, chevron);
+
+  const details = buildConfirmOrderDetailsList(snapshot);
+  details.hidden = true;
+
+  trigger.addEventListener("click", () => {
+    const isExpanded = trigger.getAttribute("aria-expanded") === "true";
+    const nextExpanded = !isExpanded;
+
+    trigger.setAttribute("aria-expanded", String(nextExpanded));
+    details.hidden = !nextExpanded;
+    article.classList.toggle("confirm-order-item--expanded", nextExpanded);
+  });
+
+  article.append(trigger, details);
+  return article;
+}
+
+function createConfirmOrderSingleItem(payload) {
+  const article = document.createElement("article");
+  article.className = "confirm-order-item confirm-order-item--single";
+  article.setAttribute("role", "listitem");
+  article.append(buildConfirmOrderDetailsList(buildDerivedSnapshot(payload)));
+  return article;
+}
+
+function renderImportConfirmation() {
+  const selectedPayloads = getSelectedPayloads();
+  const selectedPayloadCount = selectedPayloads.length;
+  const isMultiple = selectedPayloadCount > 1;
+
+  if (importConfirmationTitle) {
+    importConfirmationTitle.textContent = isMultiple
+      ? "Confirmar criação das OPs"
+      : "Confirmar criação da OP";
+  }
+
+  if (importConfirmationCopy) {
+    importConfirmationCopy.textContent = isMultiple
+      ? `Revise as ${selectedPayloadCount} OPs selecionadas. Toque em cada uma para expandir os detalhes antes de enviar.`
+      : "Revise a OP selecionada antes de enviar para o sistema destino.";
+  }
+
+  if (!importConfirmationList) {
+    return;
+  }
+
+  importConfirmationList.replaceChildren();
+
+  if (selectedPayloadCount === 0) {
+    return;
+  }
+
+  selectedPayloads.forEach((payload) => {
+    importConfirmationList.append(
+      isMultiple
+        ? createConfirmOrderAccordionItem(payload)
+        : createConfirmOrderSingleItem(payload),
+    );
+  });
+}
+
+function syncModalOverlayState() {
+  const isModalOpen =
+    state.isImportConfirmationOpen || state.isActiveConflictOpen;
+
+  popupCard?.classList.toggle("popup-card--modal-open", isModalOpen);
+  document.body.classList.toggle("popup-modal-open", isModalOpen);
+
+  importConfirmationPanel?.classList.toggle(
+    "confirm-panel--stacked",
+    state.isImportConfirmationOpen && !state.isActiveConflictOpen,
   );
-  confirmProductErp.textContent = formatFallback(
-    snapshot.productErp,
-    "Não capturado",
+  activeConflictPanel?.classList.toggle(
+    "confirm-panel--stacked",
+    state.isActiveConflictOpen,
   );
-  confirmProductCode.textContent = formatFallback(
-    snapshot.productCode,
-    "Não capturado",
-  );
-  confirmCustomerName.textContent = formatFallback(
-    snapshot.customerName,
-    "Não capturado",
-  );
-  confirmProductBase.textContent = formatFallback(
-    snapshot.productBase,
-    "Não identificado",
-  );
-  confirmVariations.textContent = formatFallback(
-    snapshot.variations,
-    "Não identificadas",
-  );
-  confirmQuantity.textContent = formatQuantity(snapshot.quantity);
-  confirmUnit.textContent = formatFallback(snapshot.unit, "Não capturada");
-  confirmDueDate.textContent = formatDate(snapshot.dueDate);
-  confirmNotes.textContent = formatFallback(snapshot.notes, "Não capturadas");
+
+  if (isModalOpen) {
+    window.scrollTo(0, 0);
+  }
 }
 
 function setImportConfirmationOpen(isOpen, { restoreFocus = true } = {}) {
   state.isImportConfirmationOpen = isOpen;
   importConfirmationPanel.hidden = !isOpen;
+  syncModalOverlayState();
   updateImportActionState();
 
   if (isOpen) {
@@ -854,6 +1042,230 @@ function setImportConfirmationOpen(isOpen, { restoreFocus = true } = {}) {
   }
 }
 
+function focusFirstActiveConflictAction() {
+  if (confirmActiveUpdateButton && !confirmActiveUpdateButton.disabled) {
+    confirmActiveUpdateButton.focus();
+    return;
+  }
+
+  if (dismissActiveConflictButton && !dismissActiveConflictButton.disabled) {
+    dismissActiveConflictButton.focus();
+  }
+}
+
+function updateActiveConflictActionState() {
+  const isSingle = state.pendingActiveConflicts.length === 1;
+  const hasSelectedConflict = state.pendingActiveConflicts.some(
+    (conflict) => conflict.selectedForUpdate,
+  );
+  const conflictsMissingId = (isSingle
+    ? state.pendingActiveConflicts
+    : state.pendingActiveConflicts.filter((conflict) => conflict.selectedForUpdate)
+  ).some((conflict) => !normalizeText(conflict.existingProductionOrderId));
+
+  setElementDisabled(
+    confirmActiveUpdateButton,
+    state.isSubmittingImport ||
+      conflictsMissingId ||
+      (!isSingle && !hasSelectedConflict),
+  );
+  setElementDisabled(cancelActiveConflictButton, state.isSubmittingImport);
+  setElementDisabled(dismissActiveConflictButton, state.isSubmittingImport);
+}
+
+function renderActiveConflictPanel() {
+  const conflicts = state.pendingActiveConflicts;
+  const isSingle = conflicts.length === 1;
+
+  if (activeConflictTitle) {
+    activeConflictTitle.textContent = isSingle
+      ? "OP ativa já existente"
+      : `${conflicts.length} OPs ativas encontradas`;
+  }
+
+  if (activeConflictCopy) {
+    activeConflictCopy.textContent = isSingle
+      ? "Esta OP já está ativa no kanban. Deseja atualizar com os dados capturados agora?"
+      : "As OPs abaixo já estão ativas no kanban. Marque apenas as que deseja atualizar; as demais serão ignoradas.";
+  }
+
+  if (confirmActiveUpdateButton) {
+    confirmActiveUpdateButton.textContent = isSingle
+      ? "Atualizar OP"
+      : "Atualizar selecionadas";
+  }
+
+  if (dismissActiveConflictButton) {
+    dismissActiveConflictButton.textContent = isSingle
+      ? "Ignorar"
+      : "Ignorar todas";
+  }
+
+  if (activeConflictHighlight) {
+    if (isSingle && conflicts[0]) {
+      activeConflictHighlight.hidden = false;
+      activeConflictHighlight.replaceChildren();
+
+      const label = document.createElement("span");
+      label.className = "active-conflict__highlight-label";
+      label.textContent = "OP detectada";
+
+      const value = document.createElement("strong");
+      value.className = "active-conflict__highlight-value";
+      value.textContent = buildOrderOptionLabel(conflicts[0].payload);
+
+      activeConflictHighlight.append(label, value);
+    } else {
+      activeConflictHighlight.hidden = true;
+      activeConflictHighlight.replaceChildren();
+    }
+  }
+
+  if (activeConflictList) {
+    activeConflictList.replaceChildren();
+
+    if (!isSingle) {
+      activeConflictList.hidden = false;
+
+      conflicts.forEach((conflict) => {
+        const row = document.createElement("label");
+        row.className = "active-conflict-row";
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = Boolean(conflict.selectedForUpdate);
+        checkbox.addEventListener("change", () => {
+          conflict.selectedForUpdate = checkbox.checked;
+          updateActiveConflictActionState();
+        });
+
+        const text = document.createElement("span");
+        text.textContent = buildOrderOptionLabel(conflict.payload);
+
+        row.append(checkbox, text);
+        activeConflictList.append(row);
+      });
+    } else {
+      activeConflictList.hidden = true;
+    }
+  }
+
+  updateActiveConflictActionState();
+}
+
+function setActiveConflictOpen(isOpen, { restoreFocus = true } = {}) {
+  state.isActiveConflictOpen = isOpen;
+
+  if (activeConflictPanel) {
+    activeConflictPanel.hidden = !isOpen;
+  }
+
+  syncModalOverlayState();
+  updateImportActionState();
+
+  if (isOpen) {
+    renderActiveConflictPanel();
+    focusFirstActiveConflictAction();
+    return;
+  }
+
+  state.pendingActiveConflicts = [];
+
+  if (
+    restoreFocus &&
+    state.lastFocusedElementBeforeActiveConflict instanceof HTMLElement
+  ) {
+    state.lastFocusedElementBeforeActiveConflict.focus();
+  }
+}
+
+function openActiveConflictPanel(conflicts) {
+  state.pendingActiveConflicts = conflicts.map((conflict) => ({
+    ...conflict,
+    selectedForUpdate: false,
+  }));
+  state.lastFocusedElementBeforeActiveConflict = document.activeElement;
+  setActiveConflictOpen(true, { restoreFocus: false });
+  void appendExtensionLog({
+    source: "importacao",
+    level: "warning",
+    message:
+      conflicts.length > 1
+        ? "Importação pausada para confirmar atualização de OPs ativas."
+        : "Importação pausada para confirmar atualização de OP ativa.",
+    details: [
+      formatDetailLabel("OPs ativas", String(conflicts.length)),
+    ],
+  });
+  renderFeedback(
+    conflicts.length > 1
+      ? "Algumas OPs selecionadas já estão ativas no kanban. Confirme quais deseja atualizar."
+      : "A OP selecionada já está ativa no kanban. Confirme se deseja atualizar.",
+  );
+}
+
+function closeActiveConflictPanel(options) {
+  setActiveConflictOpen(false, options);
+}
+
+function renderSelectedOrders() {
+  const selectedPayloads = getSelectedPayloads();
+
+  if (!selectedOrdersSection || !selectedOrdersList || !selectedOrdersCount) {
+    return;
+  }
+
+  if (selectedPayloads.length === 0) {
+    selectedOrdersSection.hidden = true;
+    selectedOrdersList.replaceChildren();
+    selectedOrdersCount.textContent = "0 selecionadas";
+    updateImportActionState();
+    return;
+  }
+
+  const nodes = selectedPayloads.map((payload) => {
+    const selectionKey = buildPayloadSelectionKey(payload);
+    const row = document.createElement("div");
+    row.className = "selected-order-chip";
+    row.setAttribute("role", "listitem");
+
+    const label = document.createElement("p");
+    label.className = "selected-order-chip__label";
+    label.textContent = buildOrderOptionLabel(payload);
+
+    const previewButton = document.createElement("button");
+    previewButton.type = "button";
+    previewButton.className = "selected-order-chip__preview";
+    previewButton.textContent = "Revisar";
+    previewButton.addEventListener("click", () => {
+      selectOrderPayloadByKey(selectionKey, {
+        toggleSelection: false,
+        keepPickerOpen: false,
+      });
+    });
+
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.className = "selected-order-chip__remove";
+    removeButton.setAttribute("aria-label", "Remover OP da seleção");
+    removeButton.textContent = "×";
+    removeButton.addEventListener("click", () => {
+      toggleOrderSelectionByKey(selectionKey, {
+        nextSelected: false,
+        keepPickerOpen: true,
+      });
+    });
+
+    row.append(label, previewButton, removeButton);
+    return row;
+  });
+
+  selectedOrdersList.replaceChildren(...nodes);
+  selectedOrdersCount.textContent = `${selectedPayloads.length} selecionadas`;
+  selectedOrdersSection.hidden = false;
+  updateImportActionState();
+}
+
 function resetImportButtonState() {
   state.importButtonMode = "idle";
   updateImportActionState();
@@ -862,6 +1274,63 @@ function resetImportButtonState() {
 function markImportSuccess() {
   state.importButtonMode = "success";
   updateImportActionState();
+}
+
+function hideImportSuccessAnimation() {
+  if (importSuccessAnimationTimer) {
+    clearTimeout(importSuccessAnimationTimer);
+    importSuccessAnimationTimer = null;
+  }
+
+  importSuccessOverlay?.classList.remove("import-success-overlay--visible");
+
+  if (importSuccessOverlay) {
+    importSuccessOverlay.hidden = true;
+  }
+}
+
+function resetExtensionToInitialSelection() {
+  state.selectedPayloadKeys = [];
+  state.currentPayload = null;
+  state.pendingBatchSummary = null;
+  resetImportButtonState();
+
+  if (state.currentPayloadOptions.length > 0) {
+    renderOrderOptions(state.currentPayloadOptions, null, {
+      autoSelect: false,
+    });
+    renderCapturedData(null);
+    renderSelectedOrders();
+    setMappingState("neutral", "Selecione uma OP");
+    renderFeedback(
+      "Selecione uma ordem na lista para revisar os dados capturados.",
+      [],
+      "neutral",
+    );
+  } else {
+    clearCapturedData();
+  }
+
+  updateImportActionState();
+}
+
+function showImportSuccessAnimation(message) {
+  if (!importSuccessOverlay || !importSuccessMessage) {
+    resetExtensionToInitialSelection();
+    return;
+  }
+
+  hideImportSuccessAnimation();
+  importSuccessMessage.textContent = message;
+  importSuccessOverlay.hidden = false;
+  importSuccessOverlay.classList.remove("import-success-overlay--visible");
+  void importSuccessOverlay.offsetWidth;
+  importSuccessOverlay.classList.add("import-success-overlay--visible");
+
+  importSuccessAnimationTimer = setTimeout(() => {
+    hideImportSuccessAnimation();
+    resetExtensionToInitialSelection();
+  }, IMPORT_SUCCESS_ANIMATION_MS);
 }
 
 function buildSettingsMissingDetails(settings) {
@@ -963,8 +1432,35 @@ function getFilteredOrderOptions() {
   });
 }
 
+function buildOrderPickerOption(payload, { selectedKey, selectedPayloadKeySet }) {
+  const option = document.createElement("button");
+  const optionKey = buildPayloadSelectionKey(payload);
+  const isPreviewed = optionKey === selectedKey;
+  const isSelected = selectedPayloadKeySet.has(optionKey);
+
+  option.type = "button";
+  option.className = "order-picker__option";
+  option.setAttribute("role", "option");
+  option.dataset.selectionKey = optionKey;
+  option.setAttribute("aria-selected", String(isSelected));
+  option.textContent = buildOrderOptionLabel(payload);
+
+  if (isSelected || isPreviewed) {
+    option.classList.add("order-picker__option--selected");
+  }
+
+  option.addEventListener("click", () => {
+    toggleOrderSelectionByKey(optionKey, {
+      keepPickerOpen: true,
+    });
+  });
+
+  return option;
+}
+
 function renderOrderOptions(payloadOptions, selectedPayload, options = {}) {
-  const { preserveOpen = false, preserveSearch = false } = options;
+  const { preserveOpen = false, preserveSearch = false, autoSelect = true } =
+    options;
 
   state.currentPayloadOptions = Array.isArray(payloadOptions)
     ? payloadOptions
@@ -980,38 +1476,51 @@ function renderOrderOptions(payloadOptions, selectedPayload, options = {}) {
   }
 
   if (state.currentPayloadOptions.length <= 1) {
-    orderSelectorSection.hidden = true;
-    orderSelectorList.replaceChildren();
-    orderSelectorCount.textContent = "1 OP";
+    const onlyPayload = state.currentPayloadOptions[0] ?? null;
+    const onlySelectionKey = onlyPayload
+      ? buildPayloadSelectionKey(onlyPayload)
+      : "";
+    const previewPayload =
+      selectedPayload ?? (autoSelect ? onlyPayload : getSelectedPayloads()[0] ?? null);
+
+    if (autoSelect && onlySelectionKey) {
+      setSelectedPayloadKeys([onlySelectionKey]);
+      ensureCurrentPayload(onlySelectionKey);
+    }
+
+    orderSelectorSection.hidden = !onlyPayload;
+    orderSelectorCount.textContent = onlyPayload ? "1 OP" : "0 OPs";
     orderSelectorTrigger.textContent =
-      buildOrderOptionLabel(selectedPayload) || "Selecionar ordem";
-    orderSelectorTrigger.disabled = true;
+      buildOrderOptionLabel(previewPayload) || "Selecionar ordem";
+    orderSelectorTrigger.disabled = !onlyPayload;
+
+    if (onlyPayload) {
+      const selectedKey = buildPayloadSelectionKey(previewPayload);
+      const selectedPayloadKeySet = new Set(state.selectedPayloadKeys);
+      orderSelectorList.replaceChildren(
+        buildOrderPickerOption(onlyPayload, {
+          selectedKey,
+          selectedPayloadKeySet,
+        }),
+      );
+    } else {
+      orderSelectorList.replaceChildren();
+    }
+
     orderSelectorEmpty.hidden = true;
+    renderSelectedOrders();
     return;
   }
 
   const selectedKey = buildPayloadSelectionKey(selectedPayload);
+  const selectedPayloadKeySet = new Set(state.selectedPayloadKeys);
   const filteredPayloadOptions = getFilteredOrderOptions();
-  const optionNodes = filteredPayloadOptions.map((payload) => {
-    const option = document.createElement("button");
-    const optionKey = buildPayloadSelectionKey(payload);
-    option.type = "button";
-    option.className = "order-picker__option";
-    option.setAttribute("role", "option");
-    option.dataset.selectionKey = optionKey;
-    option.setAttribute("aria-selected", String(optionKey === selectedKey));
-    option.textContent = buildOrderOptionLabel(payload);
-
-    if (optionKey === selectedKey) {
-      option.classList.add("order-picker__option--selected");
-    }
-
-    option.addEventListener("click", () => {
-      selectOrderPayloadByKey(optionKey);
-    });
-
-    return option;
-  });
+  const optionNodes = filteredPayloadOptions.map((payload) =>
+    buildOrderPickerOption(payload, {
+      selectedKey,
+      selectedPayloadKeySet,
+    }),
+  );
 
   orderSelectorList.replaceChildren(...optionNodes);
   orderSelectorEmpty.hidden = optionNodes.length > 0;
@@ -1020,6 +1529,7 @@ function renderOrderOptions(payloadOptions, selectedPayload, options = {}) {
   orderSelectorCount.textContent = `${state.currentPayloadOptions.length} OPs`;
   orderSelectorTrigger.disabled = false;
   orderSelectorSection.hidden = false;
+  renderSelectedOrders();
 }
 
 function renderCapturedData(payload) {
@@ -1065,9 +1575,13 @@ function renderCapturedData(payload) {
 }
 
 function clearCapturedData() {
+  hideImportSuccessAnimation();
   resetImportButtonState();
   setImportConfirmationOpen(false, { restoreFocus: false });
   state.currentPayloadOptions = [];
+  state.selectedPayloadKeys = [];
+  state.pendingBatchSummary = null;
+  state.currentPayload = null;
   state.orderSearchTerm = "";
   captureOrderNumber.textContent = "Não capturada";
   captureProductErp.textContent = "Não capturado";
@@ -1086,20 +1600,33 @@ function clearCapturedData() {
   orderSelectorTrigger.disabled = true;
   orderSelectorSearch.value = "";
   orderSelectorEmpty.hidden = true;
+  if (selectedOrdersList) {
+    selectedOrdersList.replaceChildren();
+  }
+  if (selectedOrdersCount) {
+    selectedOrdersCount.textContent = "0 selecionadas";
+  }
+  if (selectedOrdersSection) {
+    selectedOrdersSection.hidden = true;
+  }
   setOrderPickerOpen(false);
   setMappingState("neutral", "Aguardando leitura da página");
+  updateImportActionState();
 }
 
 function loadMockPreview() {
   state.currentPayloadOptions = structuredClone(MOCK_PREVIEW_OPTIONS);
   state.currentPayload = state.currentPayloadOptions[0];
+  setSelectedPayloadKeys([
+    buildPayloadSelectionKey(state.currentPayloadOptions[0]),
+  ]);
   syncDateFilters({
     issueDateFrom: "2026-06-01",
     issueDateTo: "2026-06-30",
   });
   renderOrderOptions(state.currentPayloadOptions, state.currentPayload);
+  renderSelectedOrders();
   renderCapturedData(state.currentPayload);
-  importButton.disabled = false;
   renderFeedback(
     "Preview visual carregado com dados mockados para revisar a popup.",
     [
@@ -1115,6 +1642,10 @@ function loadMockPreview() {
       formatDetailLabel(
         "Ordens encontradas",
         String(state.currentPayloadOptions.length),
+      ),
+      formatDetailLabel(
+        "Ordens selecionadas",
+        String(getSelectedPayloads().length),
       ),
       formatDetailLabel("Pagina", MOCK_PREVIEW_PAYLOAD.sourcePageUrl),
     ],
@@ -1187,6 +1718,41 @@ async function handleReviewData() {
   }
 }
 
+function normalizeImportConflictResponse(importResponse, payload) {
+  if (importResponse?.conflict) {
+    return importResponse;
+  }
+
+  const message = normalizeText(importResponse?.message);
+  const existingProductionOrderId = normalizeText(
+    importResponse?.existingProductionOrderId ??
+      importResponse?.productionOrder?.id ??
+      "",
+  );
+  const isActiveOpConflict =
+    importResponse?.statusCode === 409 ||
+    /ativa para esta OP|already exists for this ERP|já foi importada do ERP Flex/i.test(
+      message,
+    );
+
+  if (!isActiveOpConflict) {
+    return importResponse;
+  }
+
+  return {
+    ...importResponse,
+    conflict: true,
+    result: "duplicate",
+    existingProductionOrderId,
+    externalOrderId:
+      normalizeText(importResponse?.externalOrderId) ||
+      normalizeText(payload?.externalOrderId),
+    message:
+      message ||
+      "Já existe uma ordem de produção ativa para esta OP do ERP.",
+  };
+}
+
 async function loadSettings() {
   const response = await sendRuntimeMessage({
     type: "ERP_FLEX_GET_SETTINGS",
@@ -1199,6 +1765,10 @@ async function loadSettings() {
   }
 
   renderSession(response.settings);
+
+  if (state.isActiveConflictOpen || state.isImportConfirmationOpen) {
+    return response.settings;
+  }
 
   const lastImportFeedback = buildLastImportFeedback(response.settings);
 
@@ -1269,11 +1839,17 @@ async function collectOrderPreview() {
     : [response.payload];
 
   state.currentPayloadOptions = payloadOptions;
-  state.currentPayload = response.payload ?? null;
+  state.currentPayload = response.payload ?? payloadOptions[0] ?? null;
+  state.pendingBatchSummary = null;
+  if (payloadOptions.length <= 1 && state.currentPayload) {
+    setSelectedPayloadKeys([buildPayloadSelectionKey(state.currentPayload)]);
+  } else {
+    setSelectedPayloadKeys([]);
+  }
   syncDateFilters(response?.extractionMeta?.activeFilters);
   renderOrderOptions(payloadOptions, state.currentPayload);
+  renderSelectedOrders();
   renderCapturedData(state.currentPayload);
-  importButton.disabled = !state.currentPayload;
   const details = buildAnalysisDiagnosticDetails(response);
 
   if (response?.extractionMeta?.requiresExplicitSelection) {
@@ -1310,32 +1886,19 @@ async function collectOrderPreview() {
 function buildLastImportFeedback(settings) {
   const summary = normalizeText(settings?.lastImportSummary);
 
-  if (!summary && settings?.lastImportResult !== "duplicate") {
+  if (!summary) {
     return null;
   }
 
-  if (settings?.lastImportResult === "duplicate") {
-    return buildImportFeedback({
-      result: "duplicate",
-      existingProductionOrderId:
-        settings.lastImportExistingProductionOrderId || null,
-      externalOrderId: settings.lastImportExternalOrderId || null,
-    });
-  }
-
-  if (summary.startsWith("Duplicada:")) {
-    const externalOrderId =
-      summary.replace(/^Duplicada:\s*/i, "").trim() || "Não informado";
-
+  if (summary.startsWith("Importada:")) {
     return {
-      message:
-        "Esta ordem já foi importada anteriormente. Nenhuma nova OP foi criada no kanban.",
-      details: [formatDetailLabel("Id externo ERP", externalOrderId)],
-      tone: "duplicate",
+      message: summary,
+      details: [],
+      tone: "success",
     };
   }
 
-  if (summary.startsWith("Importada:")) {
+  if (summary.startsWith("Atualizada:")) {
     return {
       message: summary,
       details: [],
@@ -1351,21 +1914,24 @@ function buildLastImportFeedback(settings) {
 }
 
 function buildImportFeedback(result) {
-  if (result.result === "duplicate") {
+  if (result.result === "updated") {
     return {
-      message:
-        "Esta ordem já foi importada anteriormente. Nenhuma nova OP foi criada no kanban.",
+      message: `OP ${result.productionOrder?.orderNumber ?? ""} atualizada no kanban com sucesso.`,
       details: [
         formatDetailLabel(
-          "OP existente",
-          result.existingProductionOrderId ?? "Não informado",
+          "Id da ordem",
+          result.productionOrder?.id ?? "Não informado",
         ),
         formatDetailLabel(
           "Id externo ERP",
-          result.externalOrderId ?? "Não informado",
+          result.productionOrder?.source?.externalOrderId ?? "Não informado",
+        ),
+        formatDetailLabel(
+          "Status atual",
+          result.productionOrder?.status ?? "Não informado",
         ),
       ],
-      tone: "duplicate",
+      tone: "success",
     };
   }
 
@@ -1390,15 +1956,17 @@ function buildImportFeedback(result) {
 }
 
 function openImportConfirmation() {
-  if (!state.currentPayload) {
+  const selectedPayloads = getSelectedPayloads();
+
+  if (!state.currentPayload || selectedPayloads.length === 0) {
     void appendExtensionLog({
       source: "importacao",
       level: "warning",
       message:
-        "Tentativa de abrir a confirmação de importação sem payload capturado.",
+        "Tentativa de abrir a confirmação de importação sem OPs selecionadas.",
     });
     renderFeedback(
-      "Faça a análise da página atual antes de criar a OP no kanban.",
+      "Selecione ao menos uma OP encontrada antes de criar no kanban.",
       [],
       "error",
     );
@@ -1407,15 +1975,20 @@ function openImportConfirmation() {
 
   resetImportButtonState();
   state.lastFocusedElementBeforeConfirmation = document.activeElement;
-  renderImportConfirmation(state.currentPayload);
+  renderImportConfirmation();
   setImportConfirmationOpen(true, { restoreFocus: false });
   void appendExtensionLog({
     source: "importacao",
     level: "info",
     message: "Confirmação final de importação aberta na popup.",
+    details: [
+      formatDetailLabel("OPs selecionadas", String(selectedPayloads.length)),
+    ],
   });
   renderFeedback(
-    "Confirme os dados da OP selecionada antes de enviar para o sistema destino.",
+    selectedPayloads.length > 1
+      ? `Confirme o envio das ${selectedPayloads.length} OPs selecionadas para o sistema destino.`
+      : "Confirme os dados da OP selecionada antes de enviar para o sistema destino.",
   );
 }
 
@@ -1423,14 +1996,148 @@ function closeImportConfirmation(options) {
   setImportConfirmationOpen(false, options);
 }
 
+function buildBatchFeedback(summary) {
+  const details = [
+    formatDetailLabel("Selecionadas", String(summary.totalSelected || 0)),
+    formatDetailLabel("Criadas", String(summary.created.length)),
+    formatDetailLabel("Atualizadas", String(summary.updated.length)),
+    formatDetailLabel("Ignoradas", String(summary.skipped.length)),
+  ];
+
+  if (
+    summary.created.length === 0 &&
+    summary.updated.length === 0 &&
+    summary.skipped.length === 0
+  ) {
+    return {
+      message: "Nenhuma OP foi enviada ao kanban.",
+      details,
+      tone: "neutral",
+    };
+  }
+
+  if (summary.skipped.length > 0) {
+    return {
+      message: `Envio concluído: ${summary.created.length} criada(s), ${summary.updated.length} atualizada(s) e ${summary.skipped.length} ignorada(s).`,
+      details,
+      tone: "success",
+    };
+  }
+
+  return {
+    message: `Envio concluído: ${summary.created.length} criada(s) e ${summary.updated.length} atualizada(s).`,
+    details,
+    tone: "success",
+  };
+}
+
+async function processImportBatch(payloads, settings) {
+  const created = [];
+  const updated = [];
+  const conflicts = [];
+
+  for (const payload of payloads) {
+    const importResponse = normalizeImportConflictResponse(
+      await importPayloadWithSettings(settings, payload),
+      payload,
+    );
+
+    if (importResponse?.conflict) {
+      conflicts.push({
+        payload,
+        existingProductionOrderId: importResponse.existingProductionOrderId,
+        externalOrderId: importResponse.externalOrderId,
+        message: importResponse.message,
+        selectionKey: buildPayloadSelectionKey(payload),
+      });
+      continue;
+    }
+
+    if (!importResponse?.ok) {
+      throw importResponse;
+    }
+
+    if (importResponse.result === "updated") {
+      updated.push(importResponse);
+      continue;
+    }
+
+    created.push(importResponse);
+  }
+
+  return { created, updated, conflicts };
+}
+
+async function processActiveConflictUpdates(conflicts, settings) {
+  const updated = [];
+
+  for (const conflict of conflicts) {
+    const importResponse = await importPayloadWithSettings(
+      settings,
+      conflict.payload,
+      {
+        existingProductionOrderId: conflict.existingProductionOrderId,
+      },
+    );
+
+    if (!importResponse?.ok) {
+      throw importResponse;
+    }
+
+    updated.push(importResponse);
+  }
+
+  return updated;
+}
+
+function finalizeBatchImport(summary) {
+  if (summary.created.length > 0 || summary.updated.length > 0) {
+    markImportSuccess();
+  } else {
+    state.importButtonMode = "idle";
+    updateImportActionState();
+  }
+
+  state.pendingBatchSummary = summary;
+  const feedback = buildBatchFeedback(summary);
+  renderFeedback(feedback.message, feedback.details, feedback.tone);
+}
+
+async function importPayloadWithSettings(settings, payload, options = {}) {
+  const payloadForImport =
+    options.existingProductionOrderId &&
+    typeof payload === "object" &&
+    payload
+      ? {
+          ...payload,
+          existingProductionOrderId: options.existingProductionOrderId,
+        }
+      : payload;
+
+  return sendRuntimeMessage({
+    type: "ERP_FLEX_IMPORT_ORDER",
+    apiBaseUrl: settings.apiBaseUrl,
+    userEmail: settings.userEmail,
+    userPassword: "",
+    accessToken: settings.accessToken,
+    payload: payloadForImport,
+  });
+}
+
 async function handleImportConfirmation() {
-  if (!state.currentPayload || state.isSubmittingImport) {
+  const selectedPayloads = getSelectedPayloads();
+
+  if (selectedPayloads.length === 0 || state.isSubmittingImport) {
     return;
   }
 
   state.importButtonMode = "loading";
   setBusy(true, { importBusy: true });
-  renderFeedback("Enviando a OP confirmada para o sistema destino...");
+  renderFeedback(
+    selectedPayloads.length > 1
+      ? `Enviando ${selectedPayloads.length} OPs selecionadas para o sistema destino...`
+      : "Enviando a OP confirmada para o sistema destino...",
+  );
 
   try {
     const settings = await saveBaseSettings();
@@ -1445,30 +2152,27 @@ async function handleImportConfirmation() {
       };
     }
 
-    const importResponse = await sendRuntimeMessage({
-      type: "ERP_FLEX_IMPORT_ORDER",
-      apiBaseUrl: settings.apiBaseUrl,
-      userEmail: settings.userEmail,
-      userPassword: "",
-      accessToken: settings.accessToken,
-      payload: state.currentPayload,
-    });
-
-    if (!importResponse?.ok) {
-      throw importResponse;
-    }
-
-    const feedback = buildImportFeedback(importResponse);
-
-    if (importResponse.result === "created") {
-      markImportSuccess();
-    } else {
-      state.importButtonMode = "idle";
-    }
-
+    const batchResult = await processImportBatch(selectedPayloads, settings);
     closeImportConfirmation({ restoreFocus: false });
-    renderFeedback(feedback.message, feedback.details, feedback.tone);
 
+    if (batchResult.conflicts.length > 0) {
+      state.pendingBatchSummary = {
+        totalSelected: selectedPayloads.length,
+        created: batchResult.created,
+        updated: batchResult.updated,
+        skipped: [],
+      };
+      state.importButtonMode = "idle";
+      openActiveConflictPanel(batchResult.conflicts);
+      return;
+    }
+
+    finalizeBatchImport({
+      totalSelected: selectedPayloads.length,
+      created: batchResult.created,
+      updated: batchResult.updated,
+      skipped: [],
+    });
     await loadSettings();
   } catch (error) {
     const settingsFallback =
@@ -1490,6 +2194,108 @@ async function handleImportConfirmation() {
   } finally {
     setBusy(false, { importBusy: false });
   }
+}
+
+async function handleActiveConflictConfirmation() {
+  if (state.isSubmittingImport || state.pendingActiveConflicts.length === 0) {
+    return;
+  }
+
+  const isSingle = state.pendingActiveConflicts.length === 1;
+  const conflictsToUpdate = isSingle
+    ? state.pendingActiveConflicts
+    : state.pendingActiveConflicts.filter((conflict) => conflict.selectedForUpdate);
+
+  if (!isSingle && conflictsToUpdate.length === 0) {
+    return;
+  }
+
+  const skippedConflicts = isSingle
+    ? []
+    : state.pendingActiveConflicts.filter(
+        (conflict) => !conflict.selectedForUpdate,
+      );
+
+  state.importButtonMode = "loading";
+  setBusy(true, { importBusy: true });
+  renderFeedback(
+    conflictsToUpdate.length > 1
+      ? `Atualizando ${conflictsToUpdate.length} OPs ativas selecionadas...`
+      : "Atualizando a OP ativa selecionada...",
+  );
+
+  try {
+    const settings = await saveBaseSettings();
+    const updated = await processActiveConflictUpdates(
+      conflictsToUpdate,
+      settings,
+    );
+    const summary = {
+      totalSelected: state.pendingBatchSummary?.totalSelected ?? 0,
+      created: state.pendingBatchSummary?.created ?? [],
+      updated: [...(state.pendingBatchSummary?.updated ?? []), ...updated],
+      skipped: skippedConflicts,
+    };
+
+    closeActiveConflictPanel({ restoreFocus: false });
+    state.pendingBatchSummary = summary;
+    await loadSettings();
+
+    void appendExtensionLog({
+      source: "importacao",
+      level: "success",
+      message:
+        updated.length > 1
+          ? `${updated.length} OPs ativas atualizadas no kanban.`
+          : "OP ativa atualizada no kanban.",
+      details: [
+        formatDetailLabel("Atualizadas", String(updated.length)),
+        formatDetailLabel("Ignoradas", String(skippedConflicts.length)),
+      ],
+    });
+
+    showImportSuccessAnimation(
+      updated.length > 1
+        ? `${updated.length} OPs atualizadas com sucesso`
+        : "OP atualizada com sucesso",
+    );
+  } catch (error) {
+    const settingsFallback =
+      error && typeof error === "object" && "apiBaseUrl" in error
+        ? error
+        : await saveBaseSettings().catch(() => ({
+            apiBaseUrl: "",
+            userEmail: "",
+          }));
+    const feedback = buildImportErrorFeedback(error, settingsFallback);
+    state.importButtonMode = "idle";
+    void appendExtensionLog({
+      source: "importacao",
+      level: "error",
+      message: feedback.message,
+      details: feedback.details,
+    });
+    renderFeedback(feedback.message, feedback.details, feedback.tone);
+  } finally {
+    setBusy(false, { importBusy: false });
+  }
+}
+
+function handleDismissActiveConflict() {
+  if (state.isSubmittingImport) {
+    return;
+  }
+
+  const summary = {
+    totalSelected: state.pendingBatchSummary?.totalSelected ?? 0,
+    created: state.pendingBatchSummary?.created ?? [],
+    updated: state.pendingBatchSummary?.updated ?? [],
+    skipped: [...state.pendingActiveConflicts],
+  };
+
+  closeActiveConflictPanel({ restoreFocus: false });
+  finalizeBatchImport(summary);
+  void loadSettings();
 }
 
 async function bootstrapPopup() {
@@ -1516,21 +2322,35 @@ async function bootstrapPopup() {
   }
 }
 
-function selectOrderPayloadByKey(selectionKey) {
-  const selectedPayload = state.currentPayloadOptions.find((payload) => {
-    return buildPayloadSelectionKey(payload) === selectionKey;
-  });
+function toggleOrderSelectionByKey(selectionKey, options = {}) {
+  const { nextSelected, keepPickerOpen = false } = options;
+  const payload = findPayloadBySelectionKey(selectionKey);
 
-  if (!selectedPayload) {
+  if (!payload) {
     return false;
   }
 
-  state.currentPayload = selectedPayload;
-  renderOrderOptions(state.currentPayloadOptions, selectedPayload);
-  renderCapturedData(selectedPayload);
-  renderImportConfirmation(selectedPayload);
+  const currentlySelected = state.selectedPayloadKeys.includes(selectionKey);
+  const shouldSelect =
+    typeof nextSelected === "boolean" ? nextSelected : !currentlySelected;
 
-  const snapshot = buildDerivedSnapshot(selectedPayload);
+  if (shouldSelect) {
+    setSelectedPayloadKeys([...state.selectedPayloadKeys, selectionKey]);
+  } else {
+    setSelectedPayloadKeys(
+      state.selectedPayloadKeys.filter((entry) => entry !== selectionKey),
+    );
+  }
+
+  ensureCurrentPayload(selectionKey);
+  renderOrderOptions(state.currentPayloadOptions, state.currentPayload, {
+    preserveOpen: keepPickerOpen,
+    preserveSearch: keepPickerOpen,
+  });
+  renderCapturedData(state.currentPayload);
+  renderImportConfirmation();
+
+  const snapshot = buildDerivedSnapshot(payload);
   const details = [];
 
   if (snapshot.extractionStrategy) {
@@ -1561,20 +2381,55 @@ function selectOrderPayloadByKey(selectionKey) {
       ),
     );
   }
+  details.push(
+    formatDetailLabel("Ordens selecionadas", String(getSelectedPayloads().length)),
+  );
 
   renderFeedback(
-    "OP selecionada a partir da análise. Revise os dados e siga para a criação no kanban.",
+    shouldSelect
+      ? "OP adicionada à seleção. Revise os dados e siga para a criação no kanban."
+      : "OP removida da seleção.",
     details,
     "success",
   );
   void appendExtensionLog({
     source: "popup",
     level: "info",
-    message: "OP selecionada manualmente na lista da popup.",
+    message: shouldSelect
+      ? "OP adicionada manualmente à seleção da popup."
+      : "OP removida manualmente da seleção da popup.",
     details,
   });
   setBusy(false);
-  setOrderPickerOpen(false);
+  if (!keepPickerOpen) {
+    setOrderPickerOpen(false);
+  }
+
+  return true;
+}
+
+function selectOrderPayloadByKey(selectionKey, options = {}) {
+  const { toggleSelection = true, keepPickerOpen = false } = options;
+  const payload = findPayloadBySelectionKey(selectionKey);
+
+  if (!payload) {
+    return false;
+  }
+
+  ensureCurrentPayload(selectionKey);
+  renderOrderOptions(state.currentPayloadOptions, state.currentPayload, {
+    preserveOpen: keepPickerOpen,
+    preserveSearch: keepPickerOpen,
+  });
+  renderCapturedData(state.currentPayload);
+  renderImportConfirmation();
+
+  if (toggleSelection) {
+    return toggleOrderSelectionByKey(selectionKey, {
+      nextSelected: true,
+      keepPickerOpen,
+    });
+  }
 
   return true;
 }
@@ -1621,6 +2476,18 @@ bindClick(confirmImportButton, () => {
   void handleImportConfirmation();
 });
 
+bindClick(confirmActiveUpdateButton, () => {
+  void handleActiveConflictConfirmation();
+});
+
+bindClick(cancelActiveConflictButton, () => {
+  handleDismissActiveConflict();
+});
+
+bindClick(dismissActiveConflictButton, () => {
+  handleDismissActiveConflict();
+});
+
 bindClick(cancelConfirmationButton, () => {
   closeImportConfirmation();
 });
@@ -1652,6 +2519,12 @@ bindClick(openLogsButton, () => {
 });
 
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && state.isActiveConflictOpen) {
+    event.preventDefault();
+    handleDismissActiveConflict();
+    return;
+  }
+
   if (event.key === "Escape" && state.isImportConfirmationOpen) {
     event.preventDefault();
     closeImportConfirmation();

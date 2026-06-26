@@ -4,6 +4,7 @@ import {
   IsOptional,
   IsString,
   IsUrl,
+  IsUUID,
   MaxLength,
   Min,
   MinLength,
@@ -65,12 +66,36 @@ export class ImportProductionOrderFromErpFlexDto {
   item!: ImportProductionOrderItemDto;
 
   @IsOptional()
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  @IsString()
+  @MaxLength(240)
+  customerName?: string;
+
+  @IsOptional()
   @IsDateString()
   issueDate?: string;
 
   @IsOptional()
   @IsDateString()
   dueDate?: string;
+
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  @IsString()
+  @MaxLength(240)
+  variations?: string;
+
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  @IsString()
+  @MaxLength(2000)
+  complementaryFields?: string;
 
   @IsOptional()
   @Transform(({ value }: { value: unknown }) =>
@@ -87,4 +112,11 @@ export class ImportProductionOrderFromErpFlexDto {
   @IsOptional()
   @IsObject()
   rawPayload?: Record<string, unknown>;
+
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  @IsUUID()
+  existingProductionOrderId?: string;
 }

@@ -61,17 +61,77 @@ export class ProductionOrdersService {
     user: RequestUser,
   ) {
     const existingOrderByExternalId =
-      await this.productionOrdersRepository.findByExternalOrderId(
+      await this.productionOrdersRepository.findActiveByExternalOrderId(
         dto.externalOrderId,
       );
 
     if (existingOrderByExternalId) {
-      throw new ConflictException({
-        result: 'duplicate',
-        message: 'Production order already imported from ERP Flex.',
-        existingProductionOrderId: existingOrderByExternalId.id,
-        externalOrderId: dto.externalOrderId,
-      });
+      const orderWithSameOrderNumber =
+        await this.productionOrdersRepository.findByOrderNumber(dto.orderNumber);
+
+      if (
+        orderWithSameOrderNumber &&
+        orderWithSameOrderNumber.id !== existingOrderByExternalId.id
+      ) {
+        throw new ConflictException(
+          'A production order with this order number already exists.',
+        );
+      }
+
+      if (!dto.existingProductionOrderId) {
+        throw new ConflictException({
+          code: 'ACTIVE_PRODUCTION_ORDER_EXISTS',
+          message:
+            'An active production order already exists for this ERP order.',
+          result: 'duplicate',
+          existingProductionOrderId: existingOrderByExternalId.id,
+          externalOrderId: dto.externalOrderId,
+        });
+      }
+
+      if (dto.existingProductionOrderId !== existingOrderByExternalId.id) {
+        throw new ConflictException(
+          'The provided existing production order id does not match the active ERP order.',
+        );
+      }
+
+      const updatedOrder = await this.productionOrdersRepository.updateImportedOrder(
+        existingOrderByExternalId.id,
+        {
+          orderNumber: dto.orderNumber,
+          productCode: dto.item.productCode,
+          productDescription: dto.item.productDescription,
+          quantity: dto.item.quantity,
+          unit: dto.item.unit,
+          issueDate: dto.issueDate,
+          dueDate: this.resolveImportDueDate(dto),
+          notes: this.resolveImportNotes(dto),
+          externalOrderId: dto.externalOrderId,
+          sourcePageUrl: dto.sourcePageUrl,
+          importedAt: new Date(),
+          importedByUserId: user.userId,
+          sourcePayloadSnapshot: dto.rawPayload,
+          history: [
+            ...existingOrderByExternalId.history,
+            this.buildHistoryEvent({
+              eventType: ProductionOrderHistoryEventType.UPDATED,
+              fromStatus: existingOrderByExternalId.status,
+              toStatus: existingOrderByExternalId.status,
+              notes: this.buildImportUpdateHistoryNotes(dto),
+              userId: user.userId,
+            }),
+          ],
+        },
+      );
+
+      if (!updatedOrder) {
+        throw new NotFoundException('Production order not found.');
+      }
+
+      return {
+        result: 'updated' as const,
+        productionOrder: updatedOrder,
+      };
     }
 
     const existingOrderByOrderNumber =
@@ -90,8 +150,8 @@ export class ProductionOrdersService {
       quantity: dto.item.quantity,
       unit: dto.item.unit,
       issueDate: dto.issueDate,
-      dueDate: dto.dueDate,
-      notes: dto.notes,
+      dueDate: this.resolveImportDueDate(dto),
+      notes: this.resolveImportNotes(dto),
       origin: ProductionOrderOrigin.ERP_FLEX,
       createdByUserId: user.userId,
       importedByUserId: user.userId,
@@ -273,5 +333,74 @@ export class ProductionOrdersService {
     }
 
     return details.join(' | ');
+  }
+
+  private buildImportUpdateHistoryNotes(
+    dto: ImportProductionOrderFromErpFlexDto,
+  ): string | null {
+    const baseNotes = this.buildImportHistoryNotes(dto);
+
+    return baseNotes ? `ERP import updated | ${baseNotes}` : 'ERP import updated';
+  }
+
+  private resolveImportNotes(
+    dto: ImportProductionOrderFromErpFlexDto,
+  ): string | undefined {
+    const normalizedNotes = dto.notes?.trim();
+
+    if (normalizedNotes) {
+      return normalizedNotes;
+    }
+
+    const normalizedComplementaryFields = dto.complementaryFields?.trim();
+
+    return normalizedComplementaryFields || undefined;
+  }
+
+  private resolveImportDueDate(
+    dto: ImportProductionOrderFromErpFlexDto,
+  ): string | undefined {
+    if (dto.dueDate) {
+      return dto.dueDate;
+    }
+
+    const candidateDueDate = this.readRawPayloadCandidate(dto, 'dueDate');
+
+    if (!candidateDueDate) {
+      return undefined;
+    }
+
+    const normalizedCandidate = candidateDueDate.trim();
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(normalizedCandidate)) {
+      return normalizedCandidate;
+    }
+
+    const brDateMatch = normalizedCandidate.match(
+      /^(\d{2})\/(\d{2})\/(\d{4})$/,
+    );
+
+    if (!brDateMatch) {
+      return undefined;
+    }
+
+    const [, day, month, year] = brDateMatch;
+
+    return `${year}-${month}-${day}`;
+  }
+
+  private readRawPayloadCandidate(
+    dto: ImportProductionOrderFromErpFlexDto,
+    field: string,
+  ): string | null {
+    const rawCandidates = dto.rawPayload?.['candidates'];
+
+    if (!rawCandidates || typeof rawCandidates !== 'object') {
+      return null;
+    }
+
+    const value = (rawCandidates as Record<string, unknown>)[field];
+
+    return typeof value === 'string' ? value : null;
   }
 }

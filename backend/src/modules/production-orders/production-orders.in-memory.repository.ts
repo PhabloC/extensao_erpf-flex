@@ -6,9 +6,13 @@ import {
   type ListProductionOrdersFilters,
   type PaginatedProductionOrdersResult,
   ProductionOrdersRepository,
+  type UpdateImportedProductionOrderRecordInput,
   type UpdateProductionOrderStatusRecordInput,
 } from './production-orders.repository';
-import { type ProductionOrderEntity } from './entities/production-order.entity';
+import {
+  ProductionOrderStatus,
+  type ProductionOrderEntity,
+} from './entities/production-order.entity';
 
 @Injectable()
 export class InMemoryProductionOrdersRepository extends ProductionOrdersRepository {
@@ -102,9 +106,13 @@ export class InMemoryProductionOrdersRepository extends ProductionOrdersReposito
     return Promise.resolve(order ? this.cloneOrder(order) : null);
   }
 
-  findByExternalOrderId(externalOrderId: string) {
+  findActiveByExternalOrderId(externalOrderId: string) {
     const order = Array.from(this.orders.values()).find(
-      (entry) => entry.externalOrderId === externalOrderId,
+      (entry) =>
+        entry.externalOrderId === externalOrderId &&
+        ![ProductionOrderStatus.DONE, ProductionOrderStatus.CANCELED].includes(
+          entry.status,
+        ),
     );
 
     return Promise.resolve(order ? this.cloneOrder(order) : null);
@@ -120,6 +128,40 @@ export class InMemoryProductionOrdersRepository extends ProductionOrdersReposito
     const updatedOrder: ProductionOrderEntity = {
       ...existingOrder,
       status: input.status,
+      history: input.history.map((event) => ({ ...event })),
+      updatedAt: new Date(),
+    };
+
+    this.orders.set(id, updatedOrder);
+
+    return Promise.resolve(this.cloneOrder(updatedOrder));
+  }
+
+  updateImportedOrder(
+    id: string,
+    input: UpdateImportedProductionOrderRecordInput,
+  ) {
+    const existingOrder = this.orders.get(id);
+
+    if (!existingOrder) {
+      return Promise.resolve(null);
+    }
+
+    const updatedOrder: ProductionOrderEntity = {
+      ...existingOrder,
+      orderNumber: input.orderNumber,
+      productCode: input.productCode,
+      productDescription: input.productDescription,
+      quantity: input.quantity,
+      unit: input.unit ?? null,
+      issueDate: input.issueDate ?? null,
+      dueDate: input.dueDate ?? null,
+      notes: input.notes ?? null,
+      externalOrderId: input.externalOrderId ?? null,
+      sourcePageUrl: input.sourcePageUrl ?? null,
+      importedAt: input.importedAt ?? null,
+      importedByUserId: input.importedByUserId ?? null,
+      sourcePayloadSnapshot: input.sourcePayloadSnapshot ?? null,
       history: input.history.map((event) => ({ ...event })),
       updatedAt: new Date(),
     };

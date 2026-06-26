@@ -38,6 +38,23 @@ export interface UpdateProductionOrderStatusRecordInput {
   history: ProductionOrderHistoryEvent[];
 }
 
+export interface UpdateImportedProductionOrderRecordInput {
+  orderNumber: string;
+  productCode: string;
+  productDescription: string;
+  quantity: number;
+  unit?: string;
+  issueDate?: string;
+  dueDate?: string;
+  notes?: string;
+  externalOrderId?: string;
+  sourcePageUrl?: string;
+  importedAt?: Date;
+  importedByUserId?: string;
+  sourcePayloadSnapshot?: Record<string, unknown>;
+  history: ProductionOrderHistoryEvent[];
+}
+
 export interface PaginatedProductionOrdersResult {
   items: ProductionOrderEntity[];
   totalItems: number;
@@ -61,12 +78,17 @@ export abstract class ProductionOrdersRepository {
     orderNumber: string,
   ): Promise<ProductionOrderEntity | null>;
 
-  abstract findByExternalOrderId(
+  abstract findActiveByExternalOrderId(
     externalOrderId: string,
   ): Promise<ProductionOrderEntity | null>;
 
   abstract updateStatus(
     id: string,
     input: UpdateProductionOrderStatusRecordInput,
+  ): Promise<ProductionOrderEntity | null>;
+
+  abstract updateImportedOrder(
+    id: string,
+    input: UpdateImportedProductionOrderRecordInput,
   ): Promise<ProductionOrderEntity | null>;
 }

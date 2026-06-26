@@ -213,11 +213,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '409':
-          description: ERP production order already imported.
+          description: Active production order already exists for the same ERP external id.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ImportProductionOrderConflictResponse'
+                $ref: '#/components/schemas/ImportProductionOrderDuplicateResponse'
   /app/versions/check:
     get:
       summary: Check mobile app version compatibility
@@ -484,6 +484,12 @@ components:
           example: OP-2026-001
         item:
           $ref: '#/components/schemas/ProductionOrderItem'
+        customerName:
+          type:
+            - string
+            - 'null'
+          maxLength: 240
+          example: CLIENTE EXEMPLO LTDA
         issueDate:
           type:
             - string
@@ -494,6 +500,18 @@ components:
             - string
             - 'null'
           format: date
+        variations:
+          type:
+            - string
+            - 'null'
+          maxLength: 240
+          example: Azul Guanabara C/Abas
+        complementaryFields:
+          type:
+            - string
+            - 'null'
+          maxLength: 2000
+          example: SILK FRENTE, COSTURA REFORCADA
         notes:
           type:
             - string
@@ -561,18 +579,15 @@ components:
             - 'null'
           additionalProperties: true
           description: Optional raw payload kept for traceability and troubleshooting.
-    ImportProductionOrderSuccessResponse:
-      type: object
-      required:
-        - result
-        - productionOrder
-      properties:
-        result:
-          type: string
-          const: created
-        productionOrder:
-          $ref: '#/components/schemas/ProductionOrderDetail'
-    ImportProductionOrderConflictResponse:
+        existingProductionOrderId:
+          type:
+            - string
+            - 'null'
+          format: uuid
+          description: >
+            Required only when confirming an update for an active production order
+            previously returned in a duplicate conflict response.
+    ImportProductionOrderDuplicateResponse:
       type: object
       required:
         - result
@@ -582,16 +597,33 @@ components:
       properties:
         result:
           type: string
-          const: duplicate
+          enum:
+            - duplicate
+        code:
+          type: string
+          example: ACTIVE_PRODUCTION_ORDER_EXISTS
         message:
           type: string
-          example: Production order already imported from ERP Flex.
+          example: An active production order already exists for this ERP order.
         existingProductionOrderId:
           type: string
           format: uuid
         externalOrderId:
           type: string
           example: ERP-OP-20458
+    ImportProductionOrderSuccessResponse:
+      type: object
+      required:
+        - result
+        - productionOrder
+      properties:
+        result:
+          type: string
+          enum:
+            - created
+            - updated
+        productionOrder:
+          $ref: '#/components/schemas/ProductionOrderDetail'
     ErrorResponse:
       type: object
       required:

@@ -7,9 +7,13 @@ import {
   type ListProductionOrdersFilters,
   type PaginatedProductionOrdersResult,
   ProductionOrdersRepository,
+  type UpdateImportedProductionOrderRecordInput,
   type UpdateProductionOrderStatusRecordInput,
 } from './production-orders.repository';
-import { ProductionOrderEntity } from './entities/production-order.entity';
+import {
+  ProductionOrderEntity,
+  ProductionOrderStatus,
+} from './entities/production-order.entity';
 
 @Injectable()
 export class TypeOrmProductionOrdersRepository extends ProductionOrdersRepository {
@@ -107,10 +111,18 @@ export class TypeOrmProductionOrdersRepository extends ProductionOrdersRepositor
     });
   }
 
-  findByExternalOrderId(externalOrderId: string) {
-    return this.repository.findOne({
-      where: { externalOrderId },
-    });
+  findActiveByExternalOrderId(externalOrderId: string) {
+    return this.repository
+      .createQueryBuilder('order')
+      .where('order.externalOrderId = :externalOrderId', { externalOrderId })
+      .andWhere('order.status NOT IN (:...closedStatuses)', {
+        closedStatuses: [
+          ProductionOrderStatus.DONE,
+          ProductionOrderStatus.CANCELED,
+        ],
+      })
+      .orderBy('order.createdAt', 'DESC')
+      .getOne();
   }
 
   async updateStatus(
@@ -125,6 +137,36 @@ export class TypeOrmProductionOrdersRepository extends ProductionOrdersRepositor
 
     await this.repository.update(id, {
       status: input.status,
+      history: input.history,
+    });
+
+    return this.findById(id);
+  }
+
+  async updateImportedOrder(
+    id: string,
+    input: UpdateImportedProductionOrderRecordInput,
+  ) {
+    const existingOrder = await this.findById(id);
+
+    if (!existingOrder) {
+      return null;
+    }
+
+    await this.repository.update(id, {
+      orderNumber: input.orderNumber,
+      productCode: input.productCode,
+      productDescription: input.productDescription,
+      quantity: input.quantity,
+      unit: input.unit ?? null,
+      issueDate: input.issueDate ?? null,
+      dueDate: input.dueDate ?? null,
+      notes: input.notes ?? null,
+      externalOrderId: input.externalOrderId ?? null,
+      sourcePageUrl: input.sourcePageUrl ?? null,
+      importedAt: input.importedAt ?? null,
+      importedByUserId: input.importedByUserId ?? null,
+      sourcePayloadSnapshot: input.sourcePayloadSnapshot ?? null,
       history: input.history,
     });
 

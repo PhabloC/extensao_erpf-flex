@@ -68,6 +68,9 @@ describe('ProductionOrdersService', () => {
       {
         externalOrderId: 'ERP-OP-20458',
         orderNumber: 'OP-ERP-20458',
+        customerName: 'Cliente Exemplo',
+        variations: 'Azul Guanabara C/Abas',
+        complementaryFields: 'SILK FRENTE, COSTURA REFORCADA',
         item: {
           productCode: 'ERP-001',
           productDescription: 'Bobina Importada',
@@ -78,6 +81,9 @@ describe('ProductionOrdersService', () => {
         rawPayload: {
           extractionStrategy: 'structured+dom',
           collectedAt: '2026-06-05T13:15:00.000Z',
+          candidates: {
+            dueDate: '30/06/2026',
+          },
         },
       },
       user,
@@ -86,6 +92,8 @@ describe('ProductionOrdersService', () => {
     expect(imported.result).toBe('created');
     expect(imported.productionOrder.origin).toBe('erp-flex');
     expect(imported.productionOrder.externalOrderId).toBe('ERP-OP-20458');
+    expect(imported.productionOrder.dueDate).toBe('2026-06-30');
+    expect(imported.productionOrder.notes).toBe('SILK FRENTE, COSTURA REFORCADA');
     expect(imported.productionOrder.history[0]?.eventType).toBe('imported');
     expect(imported.productionOrder.history[0]?.notes).toContain(
       'ERP external id: ERP-OP-20458',
@@ -93,11 +101,14 @@ describe('ProductionOrdersService', () => {
     expect(imported.productionOrder.sourcePayloadSnapshot).toEqual({
       extractionStrategy: 'structured+dom',
       collectedAt: '2026-06-05T13:15:00.000Z',
+      candidates: {
+        dueDate: '30/06/2026',
+      },
     });
   });
 
-  it('rejects duplicate ERP imports by externalOrderId', async () => {
-    await productionOrdersService.importFromErpFlex(
+  it('blocks active ERP imports until the operator confirms the existing order id', async () => {
+    const imported = await productionOrdersService.importFromErpFlex(
       {
         externalOrderId: 'ERP-OP-20459',
         orderNumber: 'OP-ERP-20459',
@@ -117,13 +128,124 @@ describe('ProductionOrdersService', () => {
           orderNumber: 'OP-ERP-20460',
           item: {
             productCode: 'ERP-003',
-            productDescription: 'Perfil Duplicado',
+            productDescription: 'Perfil Atualizado',
             quantity: 10,
           },
         },
         user,
       ),
     ).rejects.toBeInstanceOf(ConflictException);
+
+    const updated = await productionOrdersService.importFromErpFlex(
+      {
+        externalOrderId: 'ERP-OP-20459',
+        orderNumber: 'OP-ERP-20460',
+        existingProductionOrderId: imported.productionOrder.id,
+        item: {
+          productCode: 'ERP-003',
+          productDescription: 'Perfil Atualizado',
+          quantity: 10,
+        },
+      },
+      user,
+    );
+
+    expect(updated.result).toBe('updated');
+    expect(updated.productionOrder.id).toBe(imported.productionOrder.id);
+    expect(updated.productionOrder.orderNumber).toBe('OP-ERP-20460');
+  });
+
+  it('updates an active ERP import only when existingProductionOrderId is confirmed', async () => {
+    const imported = await productionOrdersService.importFromErpFlex(
+      {
+        externalOrderId: 'ERP-OP-20463',
+        orderNumber: 'OP-ERP-20463',
+        item: {
+          productCode: 'ERP-006',
+          productDescription: 'Perfil Original',
+          quantity: 3,
+          unit: 'pc',
+        },
+      },
+      user,
+    );
+
+    await expect(
+      productionOrdersService.importFromErpFlex(
+        {
+          externalOrderId: 'ERP-OP-20463',
+          orderNumber: 'OP-ERP-20463-ATUALIZADA',
+          item: {
+            productCode: 'ERP-006-A',
+            productDescription: 'Perfil Atualizado',
+            quantity: 11,
+            unit: 'kg',
+          },
+          notes: 'Atualizado pela extensão',
+        },
+        user,
+      ),
+    ).rejects.toBeInstanceOf(ConflictException);
+
+    const updated = await productionOrdersService.importFromErpFlex(
+      {
+        externalOrderId: 'ERP-OP-20463',
+        orderNumber: 'OP-ERP-20463-ATUALIZADA',
+        existingProductionOrderId: imported.productionOrder.id,
+        item: {
+          productCode: 'ERP-006-A',
+          productDescription: 'Perfil Atualizado',
+          quantity: 11,
+          unit: 'kg',
+        },
+        notes: 'Atualizado pela extensão',
+      },
+      user,
+    );
+
+    expect(updated.result).toBe('updated');
+    expect(updated.productionOrder.id).toBe(imported.productionOrder.id);
+    expect(updated.productionOrder.orderNumber).toBe('OP-ERP-20463-ATUALIZADA');
+    expect(updated.productionOrder.productCode).toBe('ERP-006-A');
+    expect(updated.productionOrder.history.at(-1)?.eventType).toBe('updated');
+  });
+
+  it('allows reimporting the same externalOrderId after the previous order is done', async () => {
+    const imported = await productionOrdersService.importFromErpFlex(
+      {
+        externalOrderId: 'ERP-OP-20461',
+        orderNumber: 'OP-ERP-20461',
+        item: {
+          productCode: 'ERP-004',
+          productDescription: 'Perfil Encerrado',
+          quantity: 5,
+        },
+      },
+      user,
+    );
+
+    await productionOrdersService.updateStatus(
+      imported.productionOrder.id,
+      { status: ProductionOrderStatus.DONE },
+      user,
+    );
+
+    const reimported = await productionOrdersService.importFromErpFlex(
+      {
+        externalOrderId: 'ERP-OP-20461',
+        orderNumber: 'OP-ERP-20462',
+        item: {
+          productCode: 'ERP-005',
+          productDescription: 'Perfil Reimportado',
+          quantity: 7,
+        },
+      },
+      user,
+    );
+
+    expect(reimported.result).toBe('created');
+    expect(reimported.productionOrder.orderNumber).toBe('OP-ERP-20462');
+    expect(reimported.productionOrder.externalOrderId).toBe('ERP-OP-20461');
   });
 
   it('updates status and records history', async () => {

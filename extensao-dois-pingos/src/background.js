@@ -29,6 +29,38 @@ function translateKnownApiText(text) {
     return "Os dados enviados pela extensão foram rejeitados pela API.";
   }
 
+  if (/^Production order already imported from ERP Flex\.$/i.test(normalized)) {
+    return "A ordem de produção já foi importada do ERP Flex.";
+  }
+
+  if (
+    /^An active production order already exists for this ERP order\.$/i.test(
+      normalized,
+    )
+  ) {
+    return "Já existe uma ordem de produção ativa para esta OP do ERP.";
+  }
+
+  if (
+    /^A production order with this order number already exists\.$/i.test(
+      normalized,
+    )
+  ) {
+    return "Já existe uma ordem de produção com esse número.";
+  }
+
+  if (/^Authentication required\.?$/i.test(normalized)) {
+    return "Autenticação obrigatória.";
+  }
+
+  if (/^Invalid credentials\.?$/i.test(normalized)) {
+    return "Credenciais inválidas.";
+  }
+
+  if (/^Production order not found\.?$/i.test(normalized)) {
+    return "Ordem de produção não encontrada.";
+  }
+
   if (
     /^No registered variation was found for the provided product code\.$/i.test(
       normalized,
@@ -40,6 +72,30 @@ function translateKnownApiText(text) {
   return normalized;
 }
 
+function translateValidationFragment(text) {
+  return normalizeText(text)
+    .replace(
+      /must be shorter than or equal to (\d+) characters?/gi,
+      "deve ter no máximo $1 caracteres",
+    )
+    .replace(
+      /must be longer than or equal to (\d+) characters?/gi,
+      "deve ter no mínimo $1 caracteres",
+    )
+    .replace(/must be a string/gi, "deve ser um texto")
+    .replace(/must be a number/gi, "deve ser um número")
+    .replace(/must be a valid URL address/gi, "deve ser uma URL válida")
+    .replace(/must be a UUID/gi, "deve ser um UUID válido")
+    .replace(/must be a date string/gi, "deve ser uma data válida")
+    .replace(/must be an object/gi, "deve ser um objeto")
+    .replace(/must not be less than ([\d.]+)/gi, "não pode ser menor que $1")
+    .replace(
+      /must be a number conforming to the specified constraints/gi,
+      "deve ser um número válido dentro das regras esperadas",
+    )
+    .replace(/should not exist/gi, "não deve ser enviado");
+}
+
 function translateKnownApiDetail(detail) {
   const normalized = normalizeText(detail);
 
@@ -49,12 +105,18 @@ function translateKnownApiDetail(detail) {
 
   const [field, ...rest] = normalized.split(":");
   if (rest.length === 0) {
-    return translateKnownApiText(normalized);
+    return translateValidationFragment(translateKnownApiText(normalized));
   }
 
-  const translatedTail = translateKnownApiText(rest.join(":"));
+  const translatedTail = translateValidationFragment(
+    translateKnownApiText(rest.join(":")),
+  );
 
   return translatedTail ? `${field.trim()}: ${translatedTail}` : normalized;
+}
+
+function localizeLogMessage(message) {
+  return translateValidationFragment(translateKnownApiText(message));
 }
 
 function hasVariationLookupFailure(message, details = []) {
@@ -81,6 +143,69 @@ function buildFriendlyImportMessage(message, details = []) {
   }
 
   return translateKnownApiText(message);
+}
+
+function isActiveProductionOrderConflictMessage(message) {
+  const normalized = normalizeText(message);
+
+  return (
+    /active production order already exists/i.test(normalized) ||
+    /already imported from erp flex/i.test(normalized) ||
+    /já existe uma ordem de produção ativa/i.test(normalized) ||
+    /ordem de produção já foi importada do erp flex/i.test(normalized)
+  );
+}
+
+function extractExistingProductionOrderId(data) {
+  if (!data || typeof data !== "object") {
+    return "";
+  }
+
+  return normalizeText(
+    data.existingProductionOrderId ?? data.productionOrder?.id ?? "",
+  );
+}
+
+function extractExternalOrderId(data, payload) {
+  if (!data || typeof data !== "object") {
+    return normalizeText(payload?.externalOrderId);
+  }
+
+  return normalizeText(data.externalOrderId ?? payload?.externalOrderId);
+}
+
+function resolveActiveImportConflict({ response, data, payload }) {
+  if (response.status !== 409) {
+    return null;
+  }
+
+  const message = normalizeText(
+    data?.message ?? (typeof data === "string" ? data : ""),
+  );
+  const existingProductionOrderId = extractExistingProductionOrderId(data);
+  const externalOrderId = extractExternalOrderId(data, payload);
+  const isDuplicateResult = data?.result === "duplicate";
+  const hasActiveOpMessage = isActiveProductionOrderConflictMessage(message);
+
+  if (!isDuplicateResult && !existingProductionOrderId && !hasActiveOpMessage) {
+    return null;
+  }
+
+  return {
+    ok: false,
+    conflict: true,
+    result: "duplicate",
+    statusCode: response.status,
+    code: data?.code ?? "ACTIVE_PRODUCTION_ORDER_EXISTS",
+    message: buildFriendlyImportMessage(
+      message ||
+        "Já existe uma ordem de produção ativa para esta OP do ERP.",
+      normalizeErrorDetails(data?.details),
+    ),
+    existingProductionOrderId,
+    externalOrderId,
+    productionOrder: data?.productionOrder ?? null,
+  };
 }
 
 function normalizeErrorDetails(details) {
@@ -179,8 +304,12 @@ function buildLogEntry(entry = {}) {
       String(entry.level ?? "info")
         .trim()
         .toLowerCase() || "info",
-    message: String(entry.message ?? "Evento sem descrição.").trim(),
-    details: normalizeLogDetails(entry.details),
+    message: localizeLogMessage(
+      String(entry.message ?? "Evento sem descrição.").trim(),
+    ),
+    details: normalizeLogDetails(entry.details).map((detail) =>
+      translateKnownApiDetail(detail),
+    ),
   };
 }
 
@@ -229,8 +358,12 @@ function normalizeApiBaseUrl(rawValue) {
 async function readJsonSafely(response) {
   const contentType = response.headers.get("content-type") ?? "";
 
-  if (!contentType.includes("application/json")) {
-    return null;
+  if (!contentType.includes("json")) {
+    try {
+      return await response.json();
+    } catch {
+      return null;
+    }
   }
 
   try {
@@ -319,12 +452,31 @@ function buildImportPayloadForApi(payload) {
     apiPayload.dueDate = payload.dueDate;
   }
 
+  if (hasUsableValue(candidates.customerName)) {
+    apiPayload.customerName = candidates.customerName;
+  }
+
+  if (hasUsableValue(candidates.variations)) {
+    apiPayload.variations = candidates.variations;
+  }
+
+  const complementaryFields =
+    candidates.complementaryFields ?? payload.notes ?? undefined;
+
+  if (hasUsableValue(complementaryFields)) {
+    apiPayload.complementaryFields = complementaryFields;
+  }
+
   if (hasUsableValue(payload.notes)) {
     apiPayload.notes = payload.notes;
   }
 
   if (hasUsableValue(payload.sourcePageUrl)) {
     apiPayload.sourcePageUrl = payload.sourcePageUrl;
+  }
+
+  if (hasUsableValue(payload.existingProductionOrderId)) {
+    apiPayload.existingProductionOrderId = payload.existingProductionOrderId;
   }
 
   const sanitizedRawPayload = sanitizeRawPayloadForApi(payload.rawPayload);
@@ -389,19 +541,38 @@ function resolveImportResponse({ response, data, payload }) {
   if (response.ok && data?.result === "created") {
     return {
       ok: true,
-      result: "created",
+      result: data.result,
       productionOrder: data.productionOrder ?? null,
     };
   }
 
-  if (response.status === 409 && data?.result === "duplicate") {
+  if (response.ok && data?.result === "updated") {
+    if (!hasUsableValue(payload?.existingProductionOrderId)) {
+      return {
+        ok: false,
+        conflict: true,
+        result: "duplicate",
+        statusCode: response.status,
+        code: "ACTIVE_PRODUCTION_ORDER_EXISTS",
+        message:
+          "Esta OP já está ativa no kanban. Confirme se deseja atualizar com os dados capturados.",
+        existingProductionOrderId: extractExistingProductionOrderId(data),
+        externalOrderId: extractExternalOrderId(data, payload),
+        productionOrder: data.productionOrder ?? null,
+      };
+    }
+
     return {
       ok: true,
-      result: "duplicate",
-      message: data.message ?? "A ordem já foi importada anteriormente.",
-      existingProductionOrderId: data.existingProductionOrderId ?? null,
-      externalOrderId: data.externalOrderId ?? payload.externalOrderId,
+      result: data.result,
+      productionOrder: data.productionOrder ?? null,
     };
+  }
+
+  const activeConflict = resolveActiveImportConflict({ response, data, payload });
+
+  if (activeConflict) {
+    return activeConflict;
   }
 
   if (response.status === 401) {
@@ -475,12 +646,15 @@ async function importProductionOrder({ apiBaseUrl, accessToken, payload }) {
     payload,
   });
   const primaryDetails = normalizeErrorDetails(primaryAttempt.data?.details);
+  const compatibilityPayload = buildCompatibilityImportPayloadForApi(payload);
+  const primaryPayloadSnapshot = JSON.stringify(payload);
+  const compatibilityPayloadSnapshot = JSON.stringify(compatibilityPayload);
   const shouldRetryWithCompatibilityPayload =
     primaryAttempt.response.status === 400 &&
-    hasVariationLookupFailure(primaryAttempt.data?.message, primaryDetails);
+    hasVariationLookupFailure(primaryAttempt.data?.message, primaryDetails) &&
+    compatibilityPayloadSnapshot !== primaryPayloadSnapshot;
 
   if (shouldRetryWithCompatibilityPayload) {
-    const compatibilityPayload = buildCompatibilityImportPayloadForApi(payload);
     const compatibilityAttempt = await postImportPayload({
       apiBaseUrl,
       accessToken,
@@ -492,7 +666,6 @@ async function importProductionOrder({ apiBaseUrl, accessToken, payload }) {
 
     if (
       compatibilityAttempt.response.ok ||
-      compatibilityAttempt.response.status === 409 ||
       compatibilityAttempt.response.status === 401
     ) {
       return resolveImportResponse({
@@ -667,10 +840,25 @@ async function handleImport(message, sendResponse) {
       payload: buildImportPayloadForApi(message.payload),
     });
 
+    if (result.conflict) {
+      sendResponse({
+        ok: false,
+        conflict: true,
+        result: result.result,
+        statusCode: result.statusCode,
+        code: result.code,
+        message: result.message,
+        existingProductionOrderId: result.existingProductionOrderId,
+        externalOrderId: result.externalOrderId,
+        productionOrder: result.productionOrder,
+      });
+      return;
+    }
+
     const summary =
       result.result === "created"
         ? `Importada: ${result.productionOrder?.orderNumber ?? message.payload.orderNumber} (${result.productionOrder?.source?.externalOrderId ?? message.payload.externalOrderId})`
-        : `Duplicada: ${result.externalOrderId ?? message.payload.externalOrderId}`;
+        : `Atualizada: ${result.productionOrder?.orderNumber ?? message.payload.orderNumber} (${result.productionOrder?.source?.externalOrderId ?? message.payload.externalOrderId})`;
 
     await writeSettings({
       apiBaseUrl,
@@ -679,17 +867,17 @@ async function handleImport(message, sendResponse) {
       lastImportSummary: summary,
       lastImportResult: result.result,
       lastImportExternalOrderId:
-        result.result === "duplicate"
-          ? (result.externalOrderId ?? message.payload.externalOrderId ?? "")
-          : (result.productionOrder?.source?.externalOrderId ??
-            message.payload.externalOrderId ??
-            ""),
+        result.productionOrder?.source?.externalOrderId ??
+        message.payload.externalOrderId ??
+        "",
       lastImportExistingProductionOrderId:
-        result.result === "duplicate"
-          ? (result.existingProductionOrderId ?? "")
+        result.result === "updated"
+          ? (result.productionOrder?.id ??
+            message.payload.existingProductionOrderId ??
+            "")
           : "",
       lastImportOrderNumber:
-        result.result === "created"
+        result.result === "created" || result.result === "updated"
           ? (result.productionOrder?.orderNumber ??
             message.payload.orderNumber ??
             "")
@@ -698,11 +886,11 @@ async function handleImport(message, sendResponse) {
 
     await logExtensionEvent({
       source: "importacao",
-      level: result.result === "created" ? "success" : "warning",
+      level: "success",
       message:
         result.result === "created"
           ? "OP importada com sucesso para o sistema destino."
-          : "A importação retornou duplicidade para a OP selecionada.",
+          : "OP atualizada com sucesso no sistema destino.",
       details: [
         `Ordem: ${message.payload?.orderNumber ?? "Não informada"}`,
         `Id externo ERP: ${message.payload?.externalOrderId ?? "Não informado"}`,
@@ -789,6 +977,12 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       statusCode: error?.statusCode ?? null,
       code: error?.code ?? null,
       details: Array.isArray(error?.details) ? error.details : [],
+      conflict: error?.statusCode === 409 &&
+        isActiveProductionOrderConflictMessage(
+          error instanceof Error ? error.message : String(error ?? ""),
+        ),
+      existingProductionOrderId: error?.existingProductionOrderId ?? "",
+      externalOrderId: error?.externalOrderId ?? "",
     });
   });
 

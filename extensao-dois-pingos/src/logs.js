@@ -15,6 +15,72 @@ function normalizeText(value) {
     .trim();
 }
 
+function translateLogText(text) {
+  const normalized = normalizeText(text);
+
+  if (!normalized) {
+    return "";
+  }
+
+  if (/^Production order already imported from ERP Flex\.$/i.test(normalized)) {
+    return "A ordem de produção já foi importada do ERP Flex.";
+  }
+
+  if (
+    /^An active production order already exists for this ERP order\.$/i.test(
+      normalized,
+    )
+  ) {
+    return "Já existe uma ordem de produção ativa para esta OP do ERP.";
+  }
+
+  if (
+    /^A production order with this order number already exists\.$/i.test(
+      normalized,
+    )
+  ) {
+    return "Já existe uma ordem de produção com esse número.";
+  }
+
+  if (/^Request payload is invalid\.$/i.test(normalized)) {
+    return "Os dados enviados pela extensão foram rejeitados pela API.";
+  }
+
+  if (/^Authentication required\.?$/i.test(normalized)) {
+    return "Autenticação obrigatória.";
+  }
+
+  if (/^Invalid credentials\.?$/i.test(normalized)) {
+    return "Credenciais inválidas.";
+  }
+
+  if (/^Production order not found\.?$/i.test(normalized)) {
+    return "Ordem de produção não encontrada.";
+  }
+
+  return normalized
+    .replace(
+      /must be shorter than or equal to (\d+) characters?/gi,
+      "deve ter no máximo $1 caracteres",
+    )
+    .replace(
+      /must be longer than or equal to (\d+) characters?/gi,
+      "deve ter no mínimo $1 caracteres",
+    )
+    .replace(/must be a string/gi, "deve ser um texto")
+    .replace(/must be a number/gi, "deve ser um número")
+    .replace(/must be a valid URL address/gi, "deve ser uma URL válida")
+    .replace(/must be a UUID/gi, "deve ser um UUID válido")
+    .replace(/must be a date string/gi, "deve ser uma data válida")
+    .replace(/must be an object/gi, "deve ser um objeto")
+    .replace(/must not be less than ([\d.]+)/gi, "não pode ser menor que $1")
+    .replace(
+      /must be a number conforming to the specified constraints/gi,
+      "deve ser um número válido dentro das regras esperadas",
+    )
+    .replace(/should not exist/gi, "não deve ser enviado");
+}
+
 function setFeedbackTone(tone) {
   statusMessage.classList.remove(
     "feedback-message--error",
@@ -73,7 +139,7 @@ function normalizeDetails(details) {
     return [];
   }
 
-  return details.map((detail) => normalizeText(detail)).filter(Boolean);
+  return details.map((detail) => translateLogText(detail)).filter(Boolean);
 }
 
 function isProductionOrderCreationLog(entry) {
@@ -154,8 +220,8 @@ function buildLogItem(entry) {
   message.className = "log-item__message";
   message.textContent =
     level === "error"
-      ? `Erro: ${normalizeText(entry.message) || "Evento sem descrição."}`
-      : normalizeText(entry.message) || "Evento sem descrição.";
+      ? `Erro: ${translateLogText(entry.message) || "Evento sem descrição."}`
+      : translateLogText(entry.message) || "Evento sem descrição.";
 
   item.append(meta, message);
 

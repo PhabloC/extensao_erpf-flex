@@ -170,6 +170,11 @@ describe('Users flow (e2e)', () => {
       .send({
         externalOrderId: 'ERP-IMPORT-001',
         orderNumber: 'OP-ERP-001',
+        customerName: 'CLIENTE EXEMPLO LTDA',
+        dueDate: '2026-06-30',
+        variations: 'Azul Guanabara C/Abas',
+        complementaryFields: 'SILK FRENTE, COSTURA REFORCADA',
+        notes: 'Importado via extensão ERP Flex',
         item: {
           productCode: 'ERP-PRD-001',
           productDescription: 'Chapa Importada',
@@ -177,6 +182,14 @@ describe('Users flow (e2e)', () => {
           unit: 'pc',
         },
         sourcePageUrl: 'https://erp-flex.example.com/orders/ERP-IMPORT-001',
+        rawPayload: {
+          extractionStrategy: 'json-endpoint',
+          candidates: {
+            dueDate: '30/06/2026',
+            customerName: 'CLIENTE EXEMPLO LTDA',
+            variations: 'Azul Guanabara C/Abas',
+          },
+        },
       })
       .expect(201);
 
@@ -199,13 +212,14 @@ describe('Users flow (e2e)', () => {
       .set('Authorization', `Bearer ${accessToken}`)
       .send({
         externalOrderId: 'ERP-IMPORT-001',
-        orderNumber: 'OP-ERP-002',
+        orderNumber: 'OP-ERP-001-ATUALIZADA',
         item: {
-          productCode: 'ERP-PRD-002',
-          productDescription: 'Chapa Duplicada',
-          quantity: 14,
-          unit: 'pc',
+          productCode: 'ERP-PRD-001-ATUALIZADO',
+          productDescription: 'Chapa Atualizada',
+          quantity: 18,
+          unit: 'kg',
         },
+        notes: 'Atualizada via extensão',
       })
       .expect(409)
       .expect(
@@ -214,14 +228,100 @@ describe('Users flow (e2e)', () => {
         }: {
           body: {
             result: string;
-            externalOrderId: string;
             existingProductionOrderId: string;
+            externalOrderId: string;
           };
         }) => {
           expect(body.result).toBe('duplicate');
-          expect(body.externalOrderId).toBe('ERP-IMPORT-001');
           expect(body.existingProductionOrderId).toBe(
             imported.productionOrder.id,
+          );
+          expect(body.externalOrderId).toBe('ERP-IMPORT-001');
+        },
+      );
+
+    await request(httpServer)
+      .post('/api/production-orders/imports/erp-flex')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        externalOrderId: 'ERP-IMPORT-001',
+        orderNumber: 'OP-ERP-001-ATUALIZADA',
+        existingProductionOrderId: imported.productionOrder.id,
+        item: {
+          productCode: 'ERP-PRD-001-ATUALIZADO',
+          productDescription: 'Chapa Atualizada',
+          quantity: 18,
+          unit: 'kg',
+        },
+        notes: 'Atualizada via extensão',
+      })
+      .expect(201)
+      .expect(
+        ({
+          body,
+        }: {
+          body: {
+            result: string;
+            productionOrder: {
+              id: string;
+              orderNumber: string;
+              item: { productCode: string };
+              history: Array<{ eventType: string }>;
+            };
+          };
+        }) => {
+          expect(body.result).toBe('updated');
+          expect(body.productionOrder.id).toBe(imported.productionOrder.id);
+          expect(body.productionOrder.orderNumber).toBe(
+            'OP-ERP-001-ATUALIZADA',
+          );
+          expect(body.productionOrder.item.productCode).toBe(
+            'ERP-PRD-001-ATUALIZADO',
+          );
+          expect(body.productionOrder.history.at(-1)?.eventType).toBe(
+            'updated',
+          );
+        },
+      );
+
+    await request(httpServer)
+      .patch(`/api/production-orders/${imported.productionOrder.id}/status`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        status: 'done',
+      })
+      .expect(200);
+
+    await request(httpServer)
+      .post('/api/production-orders/imports/erp-flex')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        externalOrderId: 'ERP-IMPORT-001',
+        orderNumber: 'OP-ERP-003',
+        item: {
+          productCode: 'ERP-PRD-003',
+          productDescription: 'Chapa Reimportada',
+          quantity: 10,
+          unit: 'pc',
+        },
+      })
+      .expect(201)
+      .expect(
+        ({
+          body,
+        }: {
+          body: {
+            result: string;
+            productionOrder: {
+              orderNumber: string;
+              source: { externalOrderId: string | null };
+            };
+          };
+        }) => {
+          expect(body.result).toBe('created');
+          expect(body.productionOrder.orderNumber).toBe('OP-ERP-003');
+          expect(body.productionOrder.source.externalOrderId).toBe(
+            'ERP-IMPORT-001',
           );
         },
       );

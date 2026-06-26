@@ -130,6 +130,26 @@
                 </p>
               </div>
             </div>
+
+            <section
+              id="selected-orders-section"
+              class="selected-orders"
+              hidden
+              aria-labelledby="selected-orders-title"
+            >
+              <div class="selected-orders__header">
+                <h3 id="selected-orders-title">OPs selecionadas</h3>
+                <span id="selected-orders-count" class="selected-orders__count"
+                  >0 selecionadas</span
+                >
+              </div>
+              <div
+                id="selected-orders-list"
+                class="selected-orders__list"
+                role="list"
+                aria-label="Ordens de produção selecionadas"
+              ></div>
+            </section>
           </section>
 
           <section class="capture-section" aria-labelledby="capture-title">
@@ -252,12 +272,12 @@
 
           <section
             id="import-confirmation-panel"
-            class="confirm-panel"
+            class="confirm-panel confirm-panel--overlay"
             hidden
             aria-labelledby="import-confirmation-title"
           >
             <div class="confirm-panel__header">
-              <h2 id="import-confirmation-title">Confirmar criação da OP</h2>
+              <h2 id="import-confirmation-title">Confirmar criação das OPs</h2>
               <button
                 id="cancel-confirmation-button"
                 type="button"
@@ -267,51 +287,15 @@
                 <span aria-hidden="true">&#10005;</span>
               </button>
             </div>
-            <p class="confirm-panel__copy">
+            <p id="import-confirmation-copy" class="confirm-panel__copy">
               Revise a OP selecionada antes de enviar para o sistema destino.
             </p>
-            <dl class="confirm-list">
-              <div class="confirm-row">
-                <dt>OP:</dt>
-                <dd id="confirm-order-number">Não capturada</dd>
-              </div>
-              <div class="confirm-row">
-                <dt>Produto ERP:</dt>
-                <dd id="confirm-product-erp">Não capturado</dd>
-              </div>
-              <div class="confirm-row">
-                <dt>Código:</dt>
-                <dd id="confirm-product-code">Não capturado</dd>
-              </div>
-              <div class="confirm-row">
-                <dt>Cliente:</dt>
-                <dd id="confirm-customer-name">Não capturado</dd>
-              </div>
-              <div class="confirm-row">
-                <dt>Produto base:</dt>
-                <dd id="confirm-product-base">Não identificado</dd>
-              </div>
-              <div class="confirm-row">
-                <dt>Variações:</dt>
-                <dd id="confirm-variations">Não identificadas</dd>
-              </div>
-              <div class="confirm-row">
-                <dt>Quantidade:</dt>
-                <dd id="confirm-quantity">Não capturada</dd>
-              </div>
-              <div class="confirm-row">
-                <dt>Unidade de Medida:</dt>
-                <dd id="confirm-unit">Não capturada</dd>
-              </div>
-              <div class="confirm-row">
-                <dt>Prazo:</dt>
-                <dd id="confirm-due-date">Não capturado</dd>
-              </div>
-              <div class="confirm-row">
-                <dt>Observações:</dt>
-                <dd id="confirm-notes">Não capturadas</dd>
-              </div>
-            </dl>
+            <div
+              id="import-confirmation-list"
+              class="confirm-order-list"
+              role="list"
+              aria-label="Ordens selecionadas para confirmação"
+            ></div>
             <div class="confirm-panel__actions">
               <button
                 id="confirm-import-button"
@@ -330,6 +314,64 @@
             </div>
           </section>
 
+          <section
+            id="active-conflict-panel"
+            class="confirm-panel confirm-panel--overlay confirm-panel--conflict"
+            hidden
+            aria-labelledby="active-conflict-title"
+          >
+            <div class="confirm-panel__header">
+              <div class="confirm-panel__title-group">
+                <span class="confirm-panel__badge confirm-panel__badge--warning">
+                  Conflito
+                </span>
+                <h2 id="active-conflict-title">OP ativa já existente</h2>
+              </div>
+              <button
+                id="cancel-active-conflict-button"
+                type="button"
+                class="icon-button"
+                aria-label="Cancelar confirmação de atualização"
+              >
+                <span aria-hidden="true">&#10005;</span>
+              </button>
+            </div>
+            <div class="confirm-panel__body">
+              <p id="active-conflict-copy" class="confirm-panel__copy">
+                Esta OP já está ativa no kanban. Deseja atualizar com os dados
+                capturados?
+              </p>
+              <div
+                id="active-conflict-highlight"
+                class="active-conflict__highlight"
+                hidden
+              ></div>
+              <div
+                id="active-conflict-list"
+                class="active-conflict__list"
+                role="group"
+                aria-label="OPs ativas encontradas"
+                hidden
+              ></div>
+            </div>
+            <div class="confirm-panel__actions">
+              <button
+                id="confirm-active-update-button"
+                type="button"
+                class="action-button action-button--primary"
+              >
+                Atualizar OP
+              </button>
+              <button
+                id="dismiss-active-conflict-button"
+                type="button"
+                class="action-button action-button--secondary"
+              >
+                Ignorar
+              </button>
+            </div>
+          </section>
+
           <div class="actions">
             <button
               id="import-button"
@@ -338,6 +380,21 @@
             >
               Criar OP no Kanban
             </button>
+          </div>
+
+          <div
+            id="import-success-overlay"
+            class="import-success-overlay"
+            hidden
+            role="status"
+            aria-live="polite"
+          >
+            <div class="import-success-card">
+              <div class="import-success-check" aria-hidden="true"></div>
+              <p id="import-success-message" class="import-success-message">
+                OP atualizada com sucesso
+              </p>
+            </div>
           </div>
         </section>
       </section>

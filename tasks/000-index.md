@@ -91,6 +91,12 @@ Projeto reduzido para as stacks ativas `front-end` (React/Vite) e `backend`, pre
 - O dropdown de ordens ainda exige rolagem manual em listas longas; a change request 049 adiciona busca digitada sem remover a selecao compacta atual.
 - O feedback visual da popup ainda exibe detalhes tecnicos demais acima das acoes principais; a change request 050 remove esse bloco e preserva o diagnostico apenas nos logs.
 - A acao de analise ainda ocupa um botao textual no rodape; a change request 051 move esse acionamento para um icone de refresh no cabecalho.
+- O `409` da importacao ERP agora representa apenas conflito com OP ativa para o mesmo `externalOrderId`; a change request 052 atualiza a copy da extensao para refletir essa nova regra sem alterar payload.
+- O contrato local, a extensao e o backend deste repositorio ainda precisavam convergir para a regra atual da API sobre `externalOrderId` reutilizavel apos encerramento e campos recomendados aceitos; a change request 053 consolidou esse alinhamento no que o modelo local suporta.
+- A popup ainda importa apenas uma OP por vez e nao consegue atualizar seletivamente conflitos de OP ativa; a change request 054 adiciona selecao multipla e atualizacao confirmada por item.
+- A regra operacional mudou novamente: a importacao nao deve mais parar em duplicidade, e cada OP enviada deve resultar diretamente em criacao ou atualizacao; a change request 055 simplifica esse fluxo.
+- O time da API ainda precisa receber um resumo operacional consolidado fora do OpenAPI cru; a change request 056 gera esse documento em Markdown para compartilhamento direto.
+- A tela de logs ainda pode exibir mensagens legadas em ingles vindas da API; a change request 057 padroniza esse historico em portugues.
 
 ## Estrategia de execucao
 
@@ -154,6 +160,13 @@ Projeto reduzido para as stacks ativas `front-end` (React/Vite) e `backend`, pre
 - [done] `tasks/change-requests/049-permitir-busca-digitada-no-dropdown-de-ops-da-extensao.md` - Permitir busca digitada no dropdown de OPs da extensao.
 - [done] `tasks/change-requests/050-remover-detalhes-tecnicos-do-feedback-visual-da-popup.md` - Remover detalhes tecnicos do feedback visual da popup.
 - [done] `tasks/change-requests/051-mover-acao-de-analise-para-icone-de-refresh-no-cabecalho.md` - Mover acao de analise para icone de refresh no cabecalho.
+- [done] `tasks/change-requests/052-ajustar-feedback-da-extensao-para-409-de-op-ativa.md` - Ajustar o feedback da extensao para tratar `409` como conflito com OP ativa.
+- [done] `tasks/change-requests/053-alinhar-contrato-backend-e-extensao-a-regra-atual-da-importacao-erp-flex.md` - Alinhar contrato, backend e extensao a regra atual da importacao ERP Flex.
+- [done] `tasks/change-requests/054-suportar-multiplas-ops-e-atualizacao-seletiva-de-ops-ativas-na-extensao.md` - Permitir selecao multipla de OPs e atualizacao seletiva de conflitos ativos na extensao.
+- [done] `tasks/change-requests/055-eliminar-fluxo-de-duplicidade-na-importacao-da-extensao.md` - Simplificar a importacao para retornar apenas criacao ou atualizacao.
+- [done] `tasks/change-requests/056-documentar-contrato-operacional-da-api-para-a-extensao-erp-flex.md` - Consolidar em Markdown o que a API precisa suportar para a extensao.
+- [done] `tasks/change-requests/057-traduzir-logs-da-extensao-para-portugues.md` - Padronizar as mensagens de log da extensao em portugues.
+- [done] `tasks/change-requests/058-restaurar-confirmacao-de-atualizacao-para-ops-ativas-na-extensao.md` - Restaurar confirmacao explicita antes de atualizar OPs ativas na importacao da extensao.
 - [done] `tasks/001-definir-contrato-e-modelo-de-ordem-de-producao.md` - Definir contrato OpenAPI e modelo funcional do MVP de Ordem de Producao.
 - [done] `tasks/005-estruturar-extensao-de-navegador-para-importacao-erp-flex.md` - Criar a extensao MVP para importar ordens do ERP Flex.
 - [blocked] `tasks/006-fechar-fluxo-de-rastreabilidade-e-validacao-fim-a-fim.md` - Consolidar rastreabilidade da origem ERP e validar o fluxo ponta a ponta.
@@ -235,6 +248,12 @@ Projeto reduzido para as stacks ativas `front-end` (React/Vite) e `backend`, pre
 - `tasks/change-requests/049-permitir-busca-digitada-no-dropdown-de-ops-da-extensao.md`: depende de `tasks/change-requests/046-expor-diagnostico-da-analise-do-erp-nos-logs-da-popup.md` e refina a selecao manual das OPs com busca textual dentro do dropdown compacto.
 - `tasks/change-requests/050-remover-detalhes-tecnicos-do-feedback-visual-da-popup.md`: depende de `tasks/change-requests/046-expor-diagnostico-da-analise-do-erp-nos-logs-da-popup.md` e recolhe da popup o bloco visual de diagnostico, mantendo os detalhes nos logs.
 - `tasks/change-requests/051-mover-acao-de-analise-para-icone-de-refresh-no-cabecalho.md`: depende de `tasks/change-requests/028-adicionar-botao-de-fazer-analise-para-buscar-ops-do-erp.md` e refina a ergonomia da analise, deslocando a acao para o cabecalho da popup.
+- `tasks/change-requests/052-ajustar-feedback-da-extensao-para-409-de-op-ativa.md`: depende de `tasks/change-requests/041-traduzir-erros-da-importacao-e-tentar-compatibilidade-com-variacoes.md` e atualiza a copy da extensao para a nova semantica do `409`, agora restrita a OP ativa em aberto.
+- `tasks/change-requests/053-alinhar-contrato-backend-e-extensao-a-regra-atual-da-importacao-erp-flex.md`: depende de `tasks/change-requests/039-alinhar-payload-da-extensao-ao-contrato-de-importacao.md` e `tasks/change-requests/052-ajustar-feedback-da-extensao-para-409-de-op-ativa.md`, ampliando o contrato, restaurando os campos recomendados no payload principal e ajustando a deduplicacao do backend local para bloquear apenas OP ativa.
+- `tasks/change-requests/054-suportar-multiplas-ops-e-atualizacao-seletiva-de-ops-ativas-na-extensao.md`: depende de `tasks/change-requests/035-adicionar-confirmacao-anti-duplicidade-e-feedback-claro-na-criacao-da-op.md`, `tasks/change-requests/049-permitir-busca-digitada-no-dropdown-de-ops-da-extensao.md`, `tasks/change-requests/052-ajustar-feedback-da-extensao-para-409-de-op-ativa.md` e `tasks/change-requests/053-alinhar-contrato-backend-e-extensao-a-regra-atual-da-importacao-erp-flex.md`, adicionando selecao multipla na popup e atualizacao seletiva de OPs ativas com suporte no backend.
+- `tasks/change-requests/055-eliminar-fluxo-de-duplicidade-na-importacao-da-extensao.md`: depende de `tasks/change-requests/054-suportar-multiplas-ops-e-atualizacao-seletiva-de-ops-ativas-na-extensao.md` e remove a etapa de conflito operacional, fazendo a importacao retornar diretamente criacao ou atualizacao.
+- `tasks/change-requests/056-documentar-contrato-operacional-da-api-para-a-extensao-erp-flex.md`: depende de `tasks/change-requests/053-alinhar-contrato-backend-e-extensao-a-regra-atual-da-importacao-erp-flex.md` e `tasks/change-requests/055-eliminar-fluxo-de-duplicidade-na-importacao-da-extensao.md`, consolidando em um documento unico o comportamento atual esperado da API.
+- `tasks/change-requests/057-traduzir-logs-da-extensao-para-portugues.md`: depende de `tasks/change-requests/041-traduzir-erros-da-importacao-e-tentar-compatibilidade-com-variacoes.md` e amplia essa traducao para o historico persistido da extensao.
 
 ## Duvidas para validacao humana
 

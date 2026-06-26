@@ -58,7 +58,7 @@ paths:
       summary: Import production order from ERP Flex
       description: >
         Recebe a OP capturada pela extensao, valida autenticacao, trata
-        duplicidade e cria o registro no sistema destino.
+        criacao ou atualizacao e persiste o registro no sistema destino.
       operationId: importProductionOrderFromErpFlex
       tags:
         - ProductionOrderImports
@@ -88,11 +88,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '409':
-          description: ERP production order already imported.
+          description: Active production order already exists for the same ERP external id.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ImportProductionOrderConflictResponse'
+                $ref: '#/components/schemas/ImportProductionOrderDuplicateResponse'
 components:
   securitySchemes:
     bearerAuth:
@@ -280,6 +280,12 @@ components:
           example: OP-12345
         item:
           $ref: '#/components/schemas/ProductionOrderItem'
+        customerName:
+          type:
+            - string
+            - 'null'
+          maxLength: 240
+          example: CLIENTE EXEMPLO LTDA
         issueDate:
           type:
             - string
@@ -290,6 +296,18 @@ components:
             - string
             - 'null'
           format: date
+        variations:
+          type:
+            - string
+            - 'null'
+          maxLength: 240
+          example: Azul Guanabara C/Abas
+        complementaryFields:
+          type:
+            - string
+            - 'null'
+          maxLength: 2000
+          example: SILK FRENTE, COSTURA REFORCADA
         notes:
           type:
             - string
@@ -356,18 +374,15 @@ components:
             - 'null'
           additionalProperties: true
           description: Payload bruto opcional da captura para auditoria e suporte.
-    ImportProductionOrderSuccessResponse:
-      type: object
-      required:
-        - result
-        - productionOrder
-      properties:
-        result:
-          type: string
-          const: created
-        productionOrder:
-          $ref: '#/components/schemas/ProductionOrderDetail'
-    ImportProductionOrderConflictResponse:
+        existingProductionOrderId:
+          type:
+            - string
+            - 'null'
+          format: uuid
+          description: >
+            Obrigatorio apenas ao confirmar atualizacao de OP ativa retornada
+            previamente em conflito `409`.
+    ImportProductionOrderDuplicateResponse:
       type: object
       required:
         - result
@@ -377,16 +392,33 @@ components:
       properties:
         result:
           type: string
-          const: duplicate
+          enum:
+            - duplicate
+        code:
+          type: string
+          example: ACTIVE_PRODUCTION_ORDER_EXISTS
         message:
           type: string
-          example: Production order already imported from ERP Flex.
+          example: An active production order already exists for this ERP order.
         existingProductionOrderId:
           type: string
           format: uuid
         externalOrderId:
           type: string
           example: OP-12345
+    ImportProductionOrderSuccessResponse:
+      type: object
+      required:
+        - result
+        - productionOrder
+      properties:
+        result:
+          type: string
+          enum:
+            - created
+            - updated
+        productionOrder:
+          $ref: '#/components/schemas/ProductionOrderDetail'
     ErrorResponse:
       type: object
       required:
