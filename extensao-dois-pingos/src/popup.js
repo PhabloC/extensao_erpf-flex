@@ -1271,9 +1271,26 @@ function resetImportButtonState() {
   updateImportActionState();
 }
 
-function markImportSuccess() {
-  state.importButtonMode = "success";
-  updateImportActionState();
+function buildImportSuccessAnimationMessage({ created = [], updated = [] } = {}) {
+  const createdCount = created.length;
+  const updatedCount = updated.length;
+
+  if (createdCount > 0 && updatedCount === 0) {
+    return createdCount > 1
+      ? `${createdCount} OPs criadas com sucesso`
+      : "OP criada com sucesso";
+  }
+
+  if (updatedCount > 0 && createdCount === 0) {
+    return updatedCount > 1
+      ? `${updatedCount} OPs atualizadas com sucesso`
+      : "OP atualizada com sucesso";
+  }
+
+  const total = createdCount + updatedCount;
+  return total > 1
+    ? `${total} OPs enviadas com sucesso`
+    : "OP enviada com sucesso";
 }
 
 function hideImportSuccessAnimation() {
@@ -2091,14 +2108,15 @@ async function processActiveConflictUpdates(conflicts, settings) {
 }
 
 function finalizeBatchImport(summary) {
+  state.pendingBatchSummary = summary;
+
   if (summary.created.length > 0 || summary.updated.length > 0) {
-    markImportSuccess();
-  } else {
-    state.importButtonMode = "idle";
-    updateImportActionState();
+    showImportSuccessAnimation(buildImportSuccessAnimationMessage(summary));
+    return;
   }
 
-  state.pendingBatchSummary = summary;
+  state.importButtonMode = "idle";
+  updateImportActionState();
   const feedback = buildBatchFeedback(summary);
   renderFeedback(feedback.message, feedback.details, feedback.tone);
 }
@@ -2255,9 +2273,7 @@ async function handleActiveConflictConfirmation() {
     });
 
     showImportSuccessAnimation(
-      updated.length > 1
-        ? `${updated.length} OPs atualizadas com sucesso`
-        : "OP atualizada com sucesso",
+      buildImportSuccessAnimationMessage({ created: [], updated }),
     );
   } catch (error) {
     const settingsFallback =
