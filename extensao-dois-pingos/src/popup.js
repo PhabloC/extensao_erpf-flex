@@ -69,8 +69,12 @@ const activeConflictHighlight = document.getElementById(
 const activeConflictList = document.getElementById("active-conflict-list");
 const importSuccessOverlay = document.getElementById("import-success-overlay");
 const importSuccessMessage = document.getElementById("import-success-message");
-const IMPORT_SUCCESS_ANIMATION_MS = 1800;
+const importErrorOverlay = document.getElementById("import-error-overlay");
+const importErrorMessage = document.getElementById("import-error-message");
+const IMPORT_RESULT_ANIMATION_MS = 1800;
+const IMPORT_ERROR_MESSAGE = "Verifique os detalhes no log";
 let importSuccessAnimationTimer = null;
+let importErrorAnimationTimer = null;
 const state = {
   currentPayload: null,
   currentPayloadOptions: [],
@@ -1306,6 +1310,24 @@ function hideImportSuccessAnimation() {
   }
 }
 
+function hideImportErrorAnimation() {
+  if (importErrorAnimationTimer) {
+    clearTimeout(importErrorAnimationTimer);
+    importErrorAnimationTimer = null;
+  }
+
+  importErrorOverlay?.classList.remove("import-error-overlay--visible");
+
+  if (importErrorOverlay) {
+    importErrorOverlay.hidden = true;
+  }
+}
+
+function hideImportResultAnimations() {
+  hideImportSuccessAnimation();
+  hideImportErrorAnimation();
+}
+
 function resetExtensionToInitialSelection() {
   state.selectedPayloadKeys = [];
   state.currentPayload = null;
@@ -1337,7 +1359,7 @@ function showImportSuccessAnimation(message) {
     return;
   }
 
-  hideImportSuccessAnimation();
+  hideImportResultAnimations();
   importSuccessMessage.textContent = message;
   importSuccessOverlay.hidden = false;
   importSuccessOverlay.classList.remove("import-success-overlay--visible");
@@ -1347,7 +1369,29 @@ function showImportSuccessAnimation(message) {
   importSuccessAnimationTimer = setTimeout(() => {
     hideImportSuccessAnimation();
     resetExtensionToInitialSelection();
-  }, IMPORT_SUCCESS_ANIMATION_MS);
+  }, IMPORT_RESULT_ANIMATION_MS);
+}
+
+function showImportErrorAnimation(
+  message = IMPORT_ERROR_MESSAGE,
+  { onComplete } = {},
+) {
+  if (!importErrorOverlay || !importErrorMessage) {
+    onComplete?.();
+    return;
+  }
+
+  hideImportResultAnimations();
+  importErrorMessage.textContent = message;
+  importErrorOverlay.hidden = false;
+  importErrorOverlay.classList.remove("import-error-overlay--visible");
+  void importErrorOverlay.offsetWidth;
+  importErrorOverlay.classList.add("import-error-overlay--visible");
+
+  importErrorAnimationTimer = setTimeout(() => {
+    hideImportErrorAnimation();
+    onComplete?.();
+  }, IMPORT_RESULT_ANIMATION_MS);
 }
 
 function buildSettingsMissingDetails(settings) {
@@ -1592,7 +1636,7 @@ function renderCapturedData(payload) {
 }
 
 function clearCapturedData() {
-  hideImportSuccessAnimation();
+  hideImportResultAnimations();
   resetImportButtonState();
   setImportConfirmationOpen(false, { restoreFocus: false });
   state.currentPayloadOptions = [];
@@ -2208,7 +2252,11 @@ async function handleImportConfirmation() {
       message: feedback.message,
       details: feedback.details,
     });
-    renderFeedback(feedback.message, feedback.details, feedback.tone);
+    showImportErrorAnimation(IMPORT_ERROR_MESSAGE, {
+      onComplete: () => {
+        renderFeedback(feedback.message, feedback.details, feedback.tone);
+      },
+    });
   } finally {
     setBusy(false, { importBusy: false });
   }
@@ -2291,7 +2339,11 @@ async function handleActiveConflictConfirmation() {
       message: feedback.message,
       details: feedback.details,
     });
-    renderFeedback(feedback.message, feedback.details, feedback.tone);
+    showImportErrorAnimation(IMPORT_ERROR_MESSAGE, {
+      onComplete: () => {
+        renderFeedback(feedback.message, feedback.details, feedback.tone);
+      },
+    });
   } finally {
     setBusy(false, { importBusy: false });
   }
