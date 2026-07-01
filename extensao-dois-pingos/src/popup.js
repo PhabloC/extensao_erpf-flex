@@ -1,7 +1,6 @@
 const popupCard = document.querySelector(".popup-card");
 const statusMessage = document.getElementById("status-message");
 const statusAlert = document.getElementById("status-alert");
-const statusDetails = document.getElementById("status-details");
 const feedbackPanel = document.getElementById("feedback-panel");
 const mappingStatus = document.getElementById("mapping-status");
 const importButton = document.getElementById("import-button");
@@ -547,28 +546,6 @@ function renderDuplicateAlert(message, details = []) {
   }
 }
 
-function renderFeedbackDetails(details = []) {
-  if (!statusDetails) {
-    return;
-  }
-
-  if (!details.length) {
-    statusDetails.hidden = true;
-    statusDetails.replaceChildren();
-    return;
-  }
-
-  const nodes = details.map((detail) => {
-    const row = document.createElement("p");
-    row.className = "feedback-detail";
-    row.textContent = detail;
-    return row;
-  });
-
-  statusDetails.replaceChildren(...nodes);
-  statusDetails.hidden = false;
-}
-
 function isSupportedTabUrl(url) {
   const normalizedUrl = normalizeText(url);
 
@@ -641,11 +618,10 @@ async function requestOrderCollection(activeTab) {
   }
 }
 
-function renderFeedback(message, details = [], tone = "neutral") {
+function renderFeedback(message, _details = [], tone = "neutral") {
   if (tone === "duplicate") {
     clearDuplicateAlert();
-    renderDuplicateAlert(message, details);
-    renderFeedbackDetails([]);
+    renderDuplicateAlert(message, _details);
     return;
   }
 
@@ -653,7 +629,6 @@ function renderFeedback(message, details = [], tone = "neutral") {
   statusMessage.hidden = false;
   statusMessage.textContent = message;
   setFeedbackTone(tone);
-  renderFeedbackDetails(details);
 }
 
 function bindClick(element, handler) {

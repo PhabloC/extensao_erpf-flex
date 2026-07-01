@@ -16,6 +16,7 @@ Autoridade de orquestracao:
 - raiz: orquestracao de planejamento, execucao e rastreabilidade entre stacks
 - `front-end/`: regras locais de implementacao front-end React/Vite
 - `backend/`: regras locais de implementacao backend
+- `extensao-dois-pingos/`: extensao de navegador MV3 para importacao ERP Flex
 
 ## Fontes de verdade globais
 
@@ -63,6 +64,7 @@ Elas nao devem planejar backlog global.
   - `REPO_MAP.md`
   - `SECURITY.md`
 - Tasks `front` devem ler o `docs/ai/` da stack web escolhida antes de implementar.
+- Mudancas em `extensao-dois-pingos/` devem ler `extensao-dois-pingos/docs/ai/` e revisar versionamento semver conforme `extensao-dois-pingos/docs/ai/VERSIONING.md`.
 
 ## Regras operacionais
 
@@ -93,3 +95,7 @@ Backend:
 - `npm run lint`
 - `npm run test`
 - `npm run test:e2e`
+
+Extensao de navegador:
+- `cd extensao-dois-pingos`
+- `npm run check`

@@ -16,6 +16,7 @@ const requiredFiles = [
   'src/popup.js',
   'src/advanced-settings.js',
   'src/logs.js',
+  'src/version.js',
 ];
 
 for (const relativePath of requiredFiles) {
@@ -27,6 +28,18 @@ const manifest = JSON.parse(manifestRaw);
 
 if (manifest.manifest_version !== 3) {
   throw new Error('A extensao precisa usar manifest_version 3.');
+}
+
+const packageRaw = await readFile(path.join(extensionRoot, 'package.json'), 'utf8');
+const packageJson = JSON.parse(packageRaw);
+const semverPattern = /^\d+\.\d+\.\d+$/;
+
+if (!semverPattern.test(manifest.version)) {
+  throw new Error('A versao da extensao deve seguir MAJOR.MINOR.PATCH.');
+}
+
+if (packageJson.version !== manifest.version) {
+  throw new Error('manifest.json e package.json devem manter a mesma versao.');
 }
 
 for (const relativePath of requiredFiles.filter((file) => file.endsWith('.js'))) {
