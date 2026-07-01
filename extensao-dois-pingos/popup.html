@@ -407,14 +407,31 @@
             <div class="import-error-card">
               <div class="import-error-x" aria-hidden="true"></div>
               <p id="import-error-message" class="import-error-message">
-                Verifique os detalhes no log
+                Não foi possível importar a OP.
               </p>
+              <div class="import-error-actions">
+                <button
+                  id="import-error-logs-button"
+                  type="button"
+                  class="action-button action-button--primary import-error-action"
+                >
+                  Ver logs
+                </button>
+                <button
+                  id="import-error-dismiss-button"
+                  type="button"
+                  class="action-button action-button--secondary import-error-action"
+                >
+                  Fechar
+                </button>
+              </div>
             </div>
           </div>
         </section>
       </section>
     </main>
 
+    <script src="src/import-error-feedback.js"></script>
     <script src="src/popup.js"></script>
   </body>
 </html>

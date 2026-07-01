@@ -1,3 +1,5 @@
+importScripts("import-error-feedback.js");
+
 const EXTENSION_STORAGE_KEY = "erpFlexImporterSettings";
 const EXTENSION_LOG_STORAGE_KEY = "erpFlexImporterLogs";
 const MAX_EXTENSION_LOGS = 100;
@@ -910,11 +912,16 @@ async function handleImport(message, sendResponse) {
       });
     }
 
+    const errorPresentation = buildImportErrorPresentation(
+      error,
+      message.payload,
+    );
+
     await logExtensionEvent({
       source: "importacao",
       level: "error",
-      message: messageText,
-      details: Array.isArray(error?.details) ? error.details : [],
+      message: errorPresentation.message,
+      details: errorPresentation.details,
     });
     if (error && typeof error === "object") {
       error.__alreadyLogged = true;
@@ -977,6 +984,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       statusCode: error?.statusCode ?? null,
       code: error?.code ?? null,
       details: Array.isArray(error?.details) ? error.details : [],
+      alreadyLogged: Boolean(error?.__alreadyLogged),
       conflict: error?.statusCode === 409 &&
         isActiveProductionOrderConflictMessage(
           error instanceof Error ? error.message : String(error ?? ""),

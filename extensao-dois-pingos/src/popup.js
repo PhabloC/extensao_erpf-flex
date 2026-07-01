@@ -71,10 +71,12 @@ const importSuccessOverlay = document.getElementById("import-success-overlay");
 const importSuccessMessage = document.getElementById("import-success-message");
 const importErrorOverlay = document.getElementById("import-error-overlay");
 const importErrorMessage = document.getElementById("import-error-message");
+const importErrorLogsButton = document.getElementById("import-error-logs-button");
+const importErrorDismissButton = document.getElementById(
+  "import-error-dismiss-button",
+);
 const IMPORT_RESULT_ANIMATION_MS = 1800;
-const IMPORT_ERROR_MESSAGE = "Verifique os detalhes no log";
 let importSuccessAnimationTimer = null;
-let importErrorAnimationTimer = null;
 const state = {
   currentPayload: null,
   currentPayloadOptions: [],
@@ -90,6 +92,7 @@ const state = {
   lastFocusedElementBeforeActiveConflict: null,
   pendingBatchSummary: null,
   pendingActiveConflicts: [],
+  pendingImportErrorFeedback: null,
 };
 
 const NO_RECEIVER_ERROR_PATTERN =
@@ -1310,22 +1313,19 @@ function hideImportSuccessAnimation() {
   }
 }
 
-function hideImportErrorAnimation() {
-  if (importErrorAnimationTimer) {
-    clearTimeout(importErrorAnimationTimer);
-    importErrorAnimationTimer = null;
-  }
-
+function hideImportErrorOverlay() {
   importErrorOverlay?.classList.remove("import-error-overlay--visible");
 
   if (importErrorOverlay) {
     importErrorOverlay.hidden = true;
   }
+
+  state.pendingImportErrorFeedback = null;
 }
 
 function hideImportResultAnimations() {
   hideImportSuccessAnimation();
-  hideImportErrorAnimation();
+  hideImportErrorOverlay();
 }
 
 function resetExtensionToInitialSelection() {
@@ -1372,12 +1372,8 @@ function showImportSuccessAnimation(message) {
   }, IMPORT_RESULT_ANIMATION_MS);
 }
 
-function showImportErrorAnimation(
-  message = IMPORT_ERROR_MESSAGE,
-  { onComplete } = {},
-) {
+function showImportErrorOverlay(message = "Não foi possível importar a OP.") {
   if (!importErrorOverlay || !importErrorMessage) {
-    onComplete?.();
     return;
   }
 
@@ -1387,11 +1383,58 @@ function showImportErrorAnimation(
   importErrorOverlay.classList.remove("import-error-overlay--visible");
   void importErrorOverlay.offsetWidth;
   importErrorOverlay.classList.add("import-error-overlay--visible");
+  importErrorLogsButton?.focus();
+}
 
-  importErrorAnimationTimer = setTimeout(() => {
-    hideImportErrorAnimation();
-    onComplete?.();
-  }, IMPORT_RESULT_ANIMATION_MS);
+function dismissImportErrorOverlay() {
+  const feedback = state.pendingImportErrorFeedback;
+
+  hideImportErrorOverlay();
+
+  if (feedback) {
+    renderFeedback(feedback.message, feedback.details, feedback.tone);
+  }
+}
+
+function navigateToLogsPage(source = "popup") {
+  void appendExtensionLog({
+    source: "Navegação",
+    level: "info",
+    message: "Navegação para a página de logs iniciada pela popup.",
+    details: [formatDetailLabel("Origem", source)],
+  });
+  window.location.href = "logs.html";
+}
+
+function dismissImportModalsBeforeResultFeedback() {
+  if (state.isImportConfirmationOpen) {
+    closeImportConfirmation({ restoreFocus: false });
+  }
+
+  if (state.isActiveConflictOpen) {
+    closeActiveConflictPanel({ restoreFocus: false });
+  }
+}
+
+function reportImportFailure(errorLike, payload, settings = {}) {
+  const feedback = buildImportErrorPresentation(errorLike, payload, settings);
+
+  if (!errorLike?.alreadyLogged && !errorLike?.__alreadyLogged) {
+    void appendExtensionLog({
+      source: "importacao",
+      level: "error",
+      message: feedback.message,
+      details: feedback.details,
+    });
+  }
+
+  dismissImportModalsBeforeResultFeedback();
+  state.pendingImportErrorFeedback = {
+    message: feedback.message,
+    details: feedback.details,
+    tone: feedback.tone,
+  };
+  showImportErrorOverlay(feedback.overlayMessage);
 }
 
 function buildSettingsMissingDetails(settings) {
@@ -1414,57 +1457,6 @@ function normalizeFeedbackDetails(details) {
   }
 
   return details.map((detail) => normalizeText(detail)).filter(Boolean);
-}
-
-function buildImportErrorFeedback(errorLike, settings = {}) {
-  const message = normalizeText(errorLike?.message || errorLike);
-  const normalizedMessage =
-    message || "Erro inesperado durante a importação da OP.";
-  const details = normalizeFeedbackDetails(errorLike?.details);
-
-  if (
-    !normalizeText(settings.apiBaseUrl) ||
-    !normalizeText(settings.userEmail)
-  ) {
-    return {
-      message:
-        "A criação da OP precisa da API e do e-mail configurados antes do envio.",
-      details: buildSettingsMissingDetails(settings),
-      tone: "error",
-    };
-  }
-
-  if (/sessao expirada|renovar o token/i.test(normalizedMessage)) {
-    return {
-      message: normalizedMessage,
-      details: [
-        "Abra a configuração avançada e informe a senha para renovar a sessão.",
-        ...details,
-      ],
-      tone: "error",
-    };
-  }
-
-  if (/failed to fetch|networkerror|network error/i.test(normalizedMessage)) {
-    return {
-      message: "A extensão não conseguiu alcançar a API do sistema destino.",
-      details: [
-        formatDetailLabel(
-          "API configurada",
-          normalizeText(settings.apiBaseUrl) || "Não informada",
-        ),
-        "Verifique se a API está online e acessível a partir do navegador.",
-        ...details,
-      ],
-      tone: "error",
-    };
-  }
-
-  return {
-    message: normalizedMessage,
-    details,
-    tone: "error",
-  };
 }
 
 function buildOrderOptionLabel(payload) {
@@ -2244,19 +2236,8 @@ async function handleImportConfirmation() {
             apiBaseUrl: "",
             userEmail: "",
           }));
-    const feedback = buildImportErrorFeedback(error, settingsFallback);
     state.importButtonMode = "idle";
-    void appendExtensionLog({
-      source: "importacao",
-      level: "error",
-      message: feedback.message,
-      details: feedback.details,
-    });
-    showImportErrorAnimation(IMPORT_ERROR_MESSAGE, {
-      onComplete: () => {
-        renderFeedback(feedback.message, feedback.details, feedback.tone);
-      },
-    });
+    reportImportFailure(error, selectedPayloads[0], settingsFallback);
   } finally {
     setBusy(false, { importBusy: false });
   }
@@ -2331,19 +2312,12 @@ async function handleActiveConflictConfirmation() {
             apiBaseUrl: "",
             userEmail: "",
           }));
-    const feedback = buildImportErrorFeedback(error, settingsFallback);
     state.importButtonMode = "idle";
-    void appendExtensionLog({
-      source: "importacao",
-      level: "error",
-      message: feedback.message,
-      details: feedback.details,
-    });
-    showImportErrorAnimation(IMPORT_ERROR_MESSAGE, {
-      onComplete: () => {
-        renderFeedback(feedback.message, feedback.details, feedback.tone);
-      },
-    });
+    reportImportFailure(
+      error,
+      conflictsToUpdate[0]?.payload ?? state.pendingActiveConflicts[0]?.payload,
+      settingsFallback,
+    );
   } finally {
     setBusy(false, { importBusy: false });
   }
@@ -2578,15 +2552,22 @@ bindClick(openAdvancedSettingsButton, () => {
 });
 
 bindClick(openLogsButton, () => {
-  void appendExtensionLog({
-    source: "Navegação",
-    level: "info",
-    message: "Navegação para a página de logs iniciada pela popup.",
-  });
-  window.location.href = "logs.html";
+  navigateToLogsPage("menu-lateral");
 });
 
+bindClick(importErrorLogsButton, () => {
+  navigateToLogsPage("erro-importacao");
+});
+
+bindClick(importErrorDismissButton, dismissImportErrorOverlay);
+
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !importErrorOverlay?.hidden) {
+    event.preventDefault();
+    dismissImportErrorOverlay();
+    return;
+  }
+
   if (event.key === "Escape" && state.isActiveConflictOpen) {
     event.preventDefault();
     handleDismissActiveConflict();

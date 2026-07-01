@@ -723,7 +723,7 @@ img.traceability-icon {
     #040f28;
 }
 
-.popup-card--modal-open > :not(.confirm-panel--overlay) {
+.popup-card--modal-open > :not(.confirm-panel--overlay):not(.import-success-overlay):not(.import-error-overlay) {
   visibility: hidden;
   pointer-events: none;
 }
@@ -1457,7 +1457,7 @@ body.popup-modal-open {
 .import-success-overlay {
   position: fixed;
   inset: 0;
-  z-index: 60;
+  z-index: 80;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1556,7 +1556,7 @@ body.popup-modal-open {
 .import-error-overlay {
   position: fixed;
   inset: 0;
-  z-index: 60;
+  z-index: 80;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1569,13 +1569,14 @@ body.popup-modal-open {
 
 .import-error-overlay--visible {
   opacity: 1;
+  pointer-events: auto;
 }
 
 .import-error-card {
   display: grid;
   gap: 14px;
   justify-items: center;
-  max-width: 240px;
+  width: min(100%, 320px);
   text-align: center;
   transform: scale(0.92);
   transition: transform 220ms ease;
@@ -1622,9 +1623,21 @@ body.popup-modal-open {
 .import-error-message {
   margin: 0;
   font-size: 14px;
-  line-height: 1.4;
+  line-height: 1.45;
   font-weight: 700;
   color: #ffeceb;
+}
+
+.import-error-actions {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  justify-self: stretch;
+}
+
+.import-error-action {
+  width: 100%;
+  min-height: 40px;
 }
 
 @keyframes import-error-pop {
