@@ -17,7 +17,7 @@ Extensao MV3 para importar uma Ordem de Producao aberta no ERP Flex para o backe
 
 1. Usuario abre uma ordem no ERP Flex.
 2. Usuario abre a extensao.
-3. Extensao coleta os dados da pagina com prioridade para endpoint JSON e fallback por dados estruturados locais e DOM.
+3. Extensao usa `activeTab` para analisar somente a aba atual aberta pelo usuario e coleta os dados da pagina com prioridade para endpoint JSON e fallback por dados estruturados locais e DOM.
 4. Quando a pagina retornar varias OPs, a popup lista as ordens encontradas e permite selecionar uma OP por vez com foco no `Codigo`.
 5. A popup le o periodo de emissao atual do ERP e permite sobrescrever `de` e `ate` antes de revisar novamente a lista.
 6. Extensao autentica no backend do sistema usando `/auth/login` quando necessario.
@@ -49,6 +49,17 @@ cd extensao-dois-pingos
 npm run check
 ```
 
+## Politica de privacidade
+
+- Consulte [PRIVACY_POLICY.md](./PRIVACY_POLICY.md) para o detalhamento do tratamento de dados da extensao.
+
+## Permissoes do manifesto
+
+- `storage`: salva configuracoes locais, token, resumo da ultima importacao e logs.
+- `activeTab`: permite analisar apenas a aba atual quando o usuario abre a extensao.
+- `scripting`: injeta o coletor na aba atual quando necessario.
+- `host_permissions`: restritas as APIs suportadas hoje pela extensao, `https://api-dois-pingos.fasters.app/*` e `http://localhost/*`.
+
 ## Preview visual sem ERP
 
 1. Carregue a extensao em `chrome://extensions` ou `edge://extensions`.
@@ -69,7 +80,7 @@ npm run check
 - `Engrenagem`: abre a pagina interna de configuracao avancada.
 - `Logs`: abre a pagina interna de logs locais da extensao, com atualizacao e limpeza do historico recente.
 
-Se a extensao tiver sido recarregada com a pagina do ERP ja aberta, `Fazer analise` tenta reinjetar automaticamente o coletor na aba antes de falhar. Quando a aba nao puder receber scripts, a popup passa a orientar recarga da pagina suportada em vez de mostrar a mensagem crua do navegador.
+Se a extensao tiver sido recarregada com a pagina do ERP ja aberta, `Fazer analise` tenta reinjetar automaticamente o coletor na aba atual antes de falhar. Quando a aba nao puder receber scripts, a popup passa a orientar recarga da pagina suportada em vez de mostrar a mensagem crua do navegador.
 
 ## Validacao manual fim a fim
 
@@ -95,7 +106,7 @@ Se a extensao tiver sido recarregada com a pagina do ERP ja aberta, `Fazer anali
 
 ## Limitacoes conhecidas
 
-- O host do ERP Flex ainda nao foi restringido no manifesto porque o discovery real da URL nao foi feito.
+- A captura do ERP depende da aba atual aberta e autorizada via `activeTab`; a extensao nao mantem acesso persistente amplo a navegacao.
 - O extrator agora tenta o endpoint JSON da pagina antes de cair para bootstrap local e DOM, mas a pagina real do ERP ainda pode exigir ajuste fino do algoritmo de match.
 - O token do sistema e salvo em `chrome.storage.local`; a senha nao e armazenada.
 - Ainda nao existe teste automatizado com navegador real nesta etapa.

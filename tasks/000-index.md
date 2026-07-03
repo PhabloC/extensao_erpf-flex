@@ -97,6 +97,8 @@ Projeto reduzido para as stacks ativas `front-end` (React/Vite) e `backend`, pre
 - A regra operacional mudou novamente: a importacao nao deve mais parar em duplicidade, e cada OP enviada deve resultar diretamente em criacao ou atualizacao; a change request 055 simplifica esse fluxo.
 - O time da API ainda precisa receber um resumo operacional consolidado fora do OpenAPI cru; a change request 056 gera esse documento em Markdown para compartilhamento direto.
 - A tela de logs ainda pode exibir mensagens legadas em ingles vindas da API; a change request 057 padroniza esse historico em portugues.
+- A extensao ainda nao tinha uma politica de privacidade alinhada ao comportamento real implementado; a change request 059 cria esse documento para apoiar publicacao e transparencia operacional.
+- O manifesto da extensao ainda pedia acesso obrigatorio amplo a todos os hosts HTTP e HTTPS; a change request 060 restringe esse escopo para melhorar a publicabilidade na Chrome Web Store.
 
 ## Estrategia de execucao
 
@@ -167,6 +169,8 @@ Projeto reduzido para as stacks ativas `front-end` (React/Vite) e `backend`, pre
 - [done] `tasks/change-requests/056-documentar-contrato-operacional-da-api-para-a-extensao-erp-flex.md` - Consolidar em Markdown o que a API precisa suportar para a extensao.
 - [done] `tasks/change-requests/057-traduzir-logs-da-extensao-para-portugues.md` - Padronizar as mensagens de log da extensao em portugues.
 - [done] `tasks/change-requests/058-restaurar-confirmacao-de-atualizacao-para-ops-ativas-na-extensao.md` - Restaurar confirmacao explicita antes de atualizar OPs ativas na importacao da extensao.
+- [done] `tasks/change-requests/059-criar-politica-de-privacidade-para-a-extensao.md` - Documentar a politica de privacidade da extensao com base nos dados realmente tratados hoje.
+- [done] `tasks/change-requests/060-restringir-permissoes-da-extensao-para-publicacao-na-chrome-web-store.md` - Reduzir as permissoes do manifesto para o minimo coerente com o fluxo atual.
 - [done] `tasks/001-definir-contrato-e-modelo-de-ordem-de-producao.md` - Definir contrato OpenAPI e modelo funcional do MVP de Ordem de Producao.
 - [done] `tasks/005-estruturar-extensao-de-navegador-para-importacao-erp-flex.md` - Criar a extensao MVP para importar ordens do ERP Flex.
 - [blocked] `tasks/006-fechar-fluxo-de-rastreabilidade-e-validacao-fim-a-fim.md` - Consolidar rastreabilidade da origem ERP e validar o fluxo ponta a ponta.
@@ -254,6 +258,8 @@ Projeto reduzido para as stacks ativas `front-end` (React/Vite) e `backend`, pre
 - `tasks/change-requests/055-eliminar-fluxo-de-duplicidade-na-importacao-da-extensao.md`: depende de `tasks/change-requests/054-suportar-multiplas-ops-e-atualizacao-seletiva-de-ops-ativas-na-extensao.md` e remove a etapa de conflito operacional, fazendo a importacao retornar diretamente criacao ou atualizacao.
 - `tasks/change-requests/056-documentar-contrato-operacional-da-api-para-a-extensao-erp-flex.md`: depende de `tasks/change-requests/053-alinhar-contrato-backend-e-extensao-a-regra-atual-da-importacao-erp-flex.md` e `tasks/change-requests/055-eliminar-fluxo-de-duplicidade-na-importacao-da-extensao.md`, consolidando em um documento unico o comportamento atual esperado da API.
 - `tasks/change-requests/057-traduzir-logs-da-extensao-para-portugues.md`: depende de `tasks/change-requests/041-traduzir-erros-da-importacao-e-tentar-compatibilidade-com-variacoes.md` e amplia essa traducao para o historico persistido da extensao.
+- `tasks/change-requests/059-criar-politica-de-privacidade-para-a-extensao.md`: depende de `tasks/005-estruturar-extensao-de-navegador-para-importacao-erp-flex.md` e `tasks/change-requests/056-documentar-contrato-operacional-da-api-para-a-extensao-erp-flex.md`, consolidando em documento unico os dados locais e compartilhados pela extensao.
+- `tasks/change-requests/060-restringir-permissoes-da-extensao-para-publicacao-na-chrome-web-store.md`: depende de `tasks/005-estruturar-extensao-de-navegador-para-importacao-erp-flex.md` e `tasks/change-requests/059-criar-politica-de-privacidade-para-a-extensao.md`, reduzindo o manifesto para o menor conjunto de acessos compativel com a captura via popup e com as APIs suportadas.
 
 ## Duvidas para validacao humana
 
