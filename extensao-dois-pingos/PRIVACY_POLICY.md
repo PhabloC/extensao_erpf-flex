@@ -72,7 +72,7 @@ A extensão utiliza permissões de navegador para:
 - storage: salvar configurações, token, resumo de importação e registros técnicos locais;
 - activeTab: analisar apenas a aba atual quando o usuário abre a extensão;
 - scripting: executar o coletor de dados na aba atual quando necessário;
-- host_permissions: permitir autenticação e importação apenas nas APIs suportadas pela configuração atual, `https://api-dois-pingos.fasters.app/*` e `http://localhost/*`.
+- host_permissions: permitir autenticação e importação apenas nas APIs suportadas pela configuração atual, `https://api.doispingos.com.br/*` e `http://localhost/*`.
 
 As permissões são utilizadas exclusivamente para permitir a importação de ordens de produção entre os sistemas autorizados. A extensão não declara mais acesso obrigatório amplo a todos os sites.
 

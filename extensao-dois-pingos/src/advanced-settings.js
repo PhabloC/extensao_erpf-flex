@@ -19,7 +19,7 @@ const DEFAULT_API_PRESETS = [
   {
     id: "production",
     label: "Produção",
-    value: "https://api-dois-pingos.fasters.app/api",
+    value: "https://api.doispingos.com.br/api",
   },
   {
     id: "local",

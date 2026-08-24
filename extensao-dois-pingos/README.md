@@ -58,7 +58,7 @@ npm run check
 - `storage`: salva configuracoes locais, token, resumo da ultima importacao e logs.
 - `activeTab`: permite analisar apenas a aba atual quando o usuario abre a extensao.
 - `scripting`: injeta o coletor na aba atual quando necessario.
-- `host_permissions`: restritas as APIs suportadas hoje pela extensao, `https://api-dois-pingos.fasters.app/*` e `http://localhost/*`.
+- `host_permissions`: restritas as APIs suportadas hoje pela extensao, `https://api.doispingos.com.br/*` e `http://localhost/*`.
 
 ## Preview visual sem ERP
 

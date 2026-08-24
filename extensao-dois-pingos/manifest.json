@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ERP Flex para Kanban Importer",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "Importa ordens de produção do ERP Flex para o kanban do sistema.",
   "icons": {
     "16": "assets/icons/logo-16.png",
@@ -23,7 +23,7 @@
   },
   "permissions": ["storage", "activeTab", "scripting"],
   "host_permissions": [
-    "https://api-dois-pingos.fasters.app/*",
+    "https://api.doispingos.com.br/*",
     "http://localhost/*"
   ]
 }
